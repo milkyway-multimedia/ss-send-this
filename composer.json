@@ -1,0 +1,29 @@
+{
+    "name"             : "milkyway-multimedia/silverstripe-send-this",
+    "description"      : "Another mailer for Silverstripe...",
+    "type"             : "silverstripe-module",
+    "keywords"         : ["silverstripe", "backups"],
+    "license"          : "MIT",
+    "authors"          : [
+        {
+            "name" : "Mellisa Hankins",
+            "email": "mell@milkywaymultimedia.com.au"
+        }
+    ],
+    "require"          : {
+        "silverstripe/cms"                 : "~3.1",
+        "silverstripe/framework"           : "~3.1",
+        "tijsverkoyen/css-to-inline-styles": "dev-master"
+    },
+    "suggest"          : {
+        "lusitanian/oauth": "Allow emails to be queued",
+        "lusitanian/oauth": "Allow emails to be queued via iron.mq"
+    },
+    "config"           : {
+        "process-timeout": 600
+    },
+    "minimum-stability": "dev",
+    "extra"            : {
+        "installer-name": "send-this"
+    }
+}

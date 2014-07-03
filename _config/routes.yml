@@ -1,0 +1,15 @@
+---
+Name: mwm-routes
+After:
+  - 'framework/*'
+  - 'cms/*'
+---
+Director:
+  rules:
+    'security//$Action/$ID/$OtherID': 'Security'
+    'users//$Action/$ID/$OtherID': 'Security'
+    'email-subscriptions//$Action/$Email/$Lists': 'MWMEmailHandler'
+    'email-bounces//$Action/$Email': 'MWMEmailHandler'
+    '$Hash/mail-footer.gif': 'MWMEmailHandler_Tracker'
+    'oauth2/dropbox//$Action/$AuthURL': 'DropboxService_Controller'
+    'process-backup//$Action': 'BackupTask_Scheduler'
