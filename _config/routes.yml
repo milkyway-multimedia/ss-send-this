@@ -6,10 +6,5 @@ After:
 ---
 Director:
   rules:
-    'security//$Action/$ID/$OtherID': 'Security'
-    'users//$Action/$ID/$OtherID': 'Security'
-    'email-subscriptions//$Action/$Email/$Lists': 'MWMEmailHandler'
-    'email-bounces//$Action/$Email': 'MWMEmailHandler'
-    '$Hash/mail-footer.gif': 'MWMEmailHandler_Tracker'
-    'oauth2/dropbox//$Action/$AuthURL': 'DropboxService_Controller'
-    'process-backup//$Action': 'BackupTask_Scheduler'
+    'email-subscriptions//$Action/$Email/$Lists': 'SendThis_Controller'
+    '$Slug/mail-footer.gif': 'SendThis_Tracker'

@@ -17,7 +17,13 @@
  */
 
 class SendThis extends Mailer {
-	protected static $mailer;
+    private static $transports = [
+        'smtp' => '\Milkyway\SendThis\Transports\SMTP',
+        'ses' => '\Milkyway\SendThis\Transports\AmazonSES',
+        'mandrill' => '\Milkyway\SendThis\Transports\Mandrill',
+    ];
+
+    protected static $listeners = [];
 
 	protected static $throw_exceptions = false;
 
@@ -29,80 +35,97 @@ class SendThis extends Mailer {
 		self::$throw_exceptions = $flag;
 	}
 
-	public static function inst(){
-		if(!self::$mailer) {
-			$mailer = new PHPMailer(true);
+    public static function listen($hooks, $item) {
+        $hooks = (array) $hooks;
 
-			$method = self::settings()->method;
+        foreach($hooks as $hook) {
+            if(!isset(self::$listeners[$hook]))
+                self::$listeners[$hook] = [];
 
-			if($method == 'smtp') {
-				$mailer->IsSMTP();
+            if(!is_callable($item))
+                $item = [$item, $hook];
 
-				if(self::settings()->host)
-					$mailer->Host = self::settings()->host;
+            self::$listeners[$hook][] = $item;
+        }
+    }
 
-				if(self::settings()->port)
-					$mailer->Port = self::settings()->port;
+    public static function fire($hooks) {
+        $hooks = (array)$hooks;
 
-				if(self::settings()->username) {
-					$mailer->SMTPAuth = true;
-					$mailer->Username = self::settings()->username;
+        foreach($hooks as $hook) {
+            if(isset(self::$listeners[$hook])) {
+                $args = func_get_args();
+                array_shift($args);
 
-					if(self::settings()->password)
-						$mailer->Password = self::settings()->password;
+                foreach(self::$listeners[$hook] as $listener)
+                    call_user_func_array($listener, $args);
+            }
+        }
+    }
 
-					if(self::settings()->secure)
-						$mailer->SMTPSecure = self::settings()->secure;
-				}
+    protected $transport; // The transport
+    protected $messenger; // The PHP Mailer instance
 
-				if(self::settings()->keep_alive)
-					$mailer->SMTPKeepAlive = true;
-			}
-			elseif($method == 'sendmail')
-				$mailer->IsSendmail();
-			elseif($method == 'qmail')
-				$mailer->IsQmail();
-			else
-				$mailer->IsMail();
+    protected $noTo = false;
 
-			if(self::settings()->debug) {
-				$mailer->SMTPDebug = true;
-				$mailer->Debugoutput = 'html';
-			}
-			elseif(self::settings()->logging) {
-				$mailer->SMTPDebug = true;
-				$mailer->Debugoutput = 'error_log';
-			}
-
-			self::$mailer = $mailer;
-		}
-
-		return self::$mailer;
-	}
-
-	public static function split_email($in) {
-		if (preg_match('/^\s*(.+)\s+<(.+)>\s*$/', trim($in), $m)){
-			return array($m[2], $m[1]);
+    /**
+     * Split a name <email> string
+     *
+     * @param $string
+     * @return array
+     */
+    public static function split_email($string) {
+		if (preg_match('/^\s*(.+)\s+<(.+)>\s*$/', trim($string), $parts)){
+			return array($parts[2], $parts[1]); // Has name and email
 		} else {
-			return array(trim($in), '');
+			return array(trim($string), ''); // Has email
 		}
 	}
 
-	public static function is_blacklisted($email, $ignoreBlacklist = false) {
-		$blacklist = SendThis_Blacklist::get()->filter('Email', $email);
+    public static function admin_email($prepend = '') {
+        if($email = Config::inst()->get('Email', 'admin_email'))
+            return $prepend ? $prepend . '+' . $email : $email;
 
-		if($ignoreBlacklist)
-            $blacklist->exclude('Valid', 1);
+        $name = $prepend ? $prepend . '+no-reply' : 'no-reply';
 
-		return $blacklist->exists();
-	}
+        return $name . '@' . trim(str_replace(array('http://', 'https://', 'www.'), '', Director::protocolAndHost()), ' /');
+    }
 
-	public static function is_invalid($email) {
-		return SendThis_Blacklist::get()->filter(array('Email' => $email, 'Valid' => 0))->exists();
-	}
+    public function __construct() {
+        parent::__construct();
+        $this->setMessenger();
+    }
 
-	protected function addEmail($in, $func, $email = null, $break = false, $ignoreBlacklist = false, $hidden = false) {
-		if(!$email) $email = self::inst();
+    protected function setMessenger() {
+        $this->messenger = new PHPMailer(true);
+        $this->setTransport();
+    }
+
+    protected function resetMessenger(){
+        if($this->messenger) {
+            $this->messenger->ClearAllRecipients();
+            $this->messenger->ClearReplyTos();
+            $this->messenger->ClearAttachments();
+            $this->messenger->ClearCustomHeaders();
+        }
+
+        $this->noTo = false;
+    }
+
+    protected function setTransport() {
+        $available = $this->config()->transports;
+        $transport = $this->config()->transport;
+
+        if(isset($available[$transport]))
+            $this->transport = Object::create($available['transport'], $this->messenger);
+        else
+            $this->transport = Object::create('\Milkyway\SendThis\Transports\SendThis_Default', $this->messenger);
+
+        return $this->transport;
+    }
+
+	protected function addEmail($in, $func, $email = null, $break = false, $ignoreValid = false, $hidden = false) {
+		if(!$email) $email = $this->messenger;
 
 		$success = false;
 
@@ -112,7 +135,7 @@ class SendThis extends Mailer {
 
 			list($a,$b) = $this->split_email($item);
 
-			if($this->is_blacklisted($a, $ignoreBlacklist))  {
+			if(SendThis_Blacklist::check($a, $ignoreValid))  {
 				if($break)
 					return false;
 				else
@@ -124,9 +147,9 @@ class SendThis extends Mailer {
 
 			$success = true;
 
-			if(!$hidden && self::$no_to) {
+			if(!$hidden && $this->noTo) {
 				$email->AddAddress($a, $b);
-				self::$no_to = false;
+                $this->noTo = false;
 			}
 			else
 				$email->$func($a, $b);
@@ -135,22 +158,21 @@ class SendThis extends Mailer {
 		return $success;
 	}
 
-	protected function email($to, $from, $subject, $attachedFiles = null, $headers = null) {
-		$email = self::inst();
+	protected function message($to, $from, $subject, $attachedFiles = null, $headers = null) {
+		$email = $this->messenger;
 
 		if(!$headers) $headers = array();
-        $configHeaders = $this->config()->headers;
 
-		$ignoreBlacklist = false;
+		$ignoreValid = false;
 
-		if(isset($headers[$configHeaders['priority']])) {
-			$ignoreBlacklist = true;
-			unset($headers[$configHeaders['priority']]);
+		if(isset($headers['X-Milkyway-Priority'])) {
+            $ignoreValid = true;
+			unset($headers['X-Milkyway-Priority']);
 		}
 
 		// set the to
-		if(!$this->addEmail($to, 'AddAddress', $email, $ignoreBlacklist))
-			self::$no_to = true;
+		if(!$this->addEmail($to, 'AddAddress', $email, $ignoreValid))
+			$this->noTo = true;
 
 		list($doFrom, $doFromName) = $this->split_email($from);
 
@@ -170,12 +192,12 @@ class SendThis extends Mailer {
 					if(!$realFromName) $doFromName = SiteConfig::current_site_config()->AdminName;
 				}
 				else {
-					$doFrom = MWM::adminEmail();
+					$doFrom = $this->admin_email();
 					if(!$realFromName) $doFromName = singleton('LeftAndMain')->ApplicationName;
 				}
 
 				if(is_bool($sameDomain) && !(substr($doFrom, -strlen($base)) === $base)) {
-					$doFrom = MWM::adminEmail();
+					$doFrom = $this->admin_email();
 					if(!$realFromName) $doFromName = singleton('LeftAndMain')->ApplicationName;
 				}
 
@@ -187,7 +209,7 @@ class SendThis extends Mailer {
 			if(ClassInfo::exists('SiteConfig'))
 				$doFrom = SiteConfig::current_site_config()->AdminEmail;
 			else
-				$doFrom = MWM::adminEmail();
+				$doFrom = $this->admin_email();
 		}
 
 		$email->setFrom($doFrom, $doFromName);
@@ -215,12 +237,12 @@ class SendThis extends Mailer {
 			if (isset($headers['bcc'])) {$headers['Bcc']=$headers['bcc']; unset($headers['bcc']); }
 
 			if(isset($headers['Cc'])) {
-				$this->addEmail($headers['Cc'], 'AddCC', $email, $ignoreBlacklist);
+				$this->addEmail($headers['Cc'], 'AddCC', $email, $ignoreValid);
 				unset($headers['Cc']);
 			}
 
 			if(isset($headers['Bcc'])) {
-				$this->addEmail($headers['Bcc'], 'AddBCC', $email, $ignoreBlacklist);
+				$this->addEmail($headers['Bcc'], 'AddBCC', $email, $ignoreValid);
 				unset($headers['Bcc']);
 			}
 
@@ -256,17 +278,19 @@ class SendThis extends Mailer {
 		}
 
 		// Email has higher chance of being received if there is a too email sent...
-		if(self::$no_to && $to = $this->settings()->default_to_email)
-			$this->addEmail($to, 'AddAddress', $email, $ignoreBlacklist);
+		if($this->noTo && $to = Email::config()->default_to_email) {
+			$this->addEmail($to, 'AddAddress', $email, $ignoreValid);
+            $this->noTo = false;
+        }
 
 		$server = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : singleton('LeftAndMain')->ApplicationName;
-		$email->XMailer = sprintf('Milkyway Mailer 2.0 (Sent from %s)', $server);
+		$email->XMailer = sprintf('SendThis Mailer 2.0 (Sent from %s)', $server);
 
-		if($this->settings()->confirm_reading_to)
-			$email->ConfirmReadingTo = $this->settings()->confirm_reading_to;
+		if($this->config()->confirm_reading_to)
+			$email->ConfirmReadingTo = $this->config()->confirm_reading_to;
 
-		if($this->settings()->word_wrap)
-			$email->WordWrap = $this->settings()->word_wrap;
+		if($this->config()->word_wrap)
+			$email->WordWrap = $this->config()->word_wrap;
 
 		foreach ($headers as $k => $v)
 			$email->AddCustomHeader($k, $v);
@@ -275,54 +299,41 @@ class SendThis extends Mailer {
 	}
 
 	public function sendPlain($to, $from, $subject, $content, $attachedFiles = null, $headers = null) {
-		$this->startDebug($to, $from);
-
-		$log = MWMMailer_Log::create()->init('plain', $headers);
-		$email = $this->email($to, $from, $subject, $attachedFiles, $headers);
-
-		$log->log(false, $to, $from, $subject, $content, $attachedFiles, $headers, false);
+		$log = SendThis_Log::create()->init('plain', $headers);
+        $log->Transport = get_class($this->transport);
+        $this->transport->applyHeaders($headers);
+		$email = $this->message($to, $from, $subject, $attachedFiles, $headers);
 
 		if($email) {
 			$email->Body = $log->removeTracker(strip_tags($content));
-			$email->IsHTML(false);
+			$email->isHTML(false);
 
 			try {
-				$result = $this->send($email, $log);
+				$result = $this->transport->start($email, $log);
 			} catch(Exception $e) {
 				$result = $e->getMessage();
+
+                if(self::$throw_exceptions)
+                    throw $e;
 			}
 
 			if(!$result || $email->IsError())
 				$result = $email->ErrorInfo;
-
-			$log->log($result, $to, $from, $subject, $content, $attachedFiles, $headers);
-
-			$this->endDebug($result && !$email->IsError());
-
-			self::clear();
-
-			if(isset($e) && self::$throw_exceptions)
-				throw $e;
-
-			return !is_string($result);
 		}
+        else
+            $result = 'Email has been unsubscribed/blacklisted';
 
-		$log->log('Email has been unsubscribed/blacklisted', $to, $from, $subject, $content, $attachedFiles, $headers);
+        $log->log($result, $to, $from, $subject, $content, $attachedFiles, $headers);
+        $this->resetMessenger();
 
-		$this->endDebug(false);
-
-		self::clear();
-
-		return false;
+		return $result;
 	}
 
 	public function sendHTML($to, $from, $subject, $htmlContent, $attachedFiles = null, $headers = null, $plainContent = null) {
-		$this->startDebug($to, $from);
-
-		$log = MWMMailer_Log::create()->init('html', $headers);
-		$email = $this->email($to, $from, $subject, $attachedFiles, $headers);
-
-		$log->log(false, $to, $from, $subject, $htmlContent, $attachedFiles, $headers, false);
+		$log = SendThis_Log::create()->init('html', $headers);
+        $log->Transport = get_class($this->transport);
+        $this->transport->applyHeaders($headers);
+		$email = $this->message($to, $from, $subject, $attachedFiles, $headers);
 
 		if($email) {
 			$email->Body = $log->insertTracker($log->trackLinks($htmlContent));
@@ -330,286 +341,25 @@ class SendThis extends Mailer {
 			$email->IsHTML();
 
 			try {
-				$result = $this->send($email, $log);
+				$result = $this->transport->start($email, $log);
 			} catch(Exception $e) {
 				$result = $e->getMessage();
+
+                if(self::$throw_exceptions)
+                    throw $e;
 			}
 
 			if(!$result || $email->IsError())
 				$result = $email->ErrorInfo;
-
-			$log->log($result, $to, $from, $subject, $htmlContent, $attachedFiles, $headers);
-
-			$this->endDebug($result && !$email->IsError());
-
-			self::clear();
-
-			if(isset($e) && self::$throw_exceptions)
-				throw $e;
-
-			return !is_string($result);
 		}
+        else
+		    $result = 'Email has been unsubscribed/blacklisted';
 
-		$log->log('Email has been unsubscribed/blacklisted', $to, $from, $subject, $htmlContent, $attachedFiles, $headers);
-
-		$this->endDebug(false);
-
-		self::clear();
-
-		return false;
-	}
-
-	public function send($email = null, $log = null) {
-		if(!$email) $email = self::inst();
-
-		if($this->settings()->method == 'ses')
-			$result = $this->sendViaSES($email, $log);
-		elseif($this->settings()->method == 'mailgun')
-			$result = $this->sendViaMailGun($email, $log);
-		else
-			$result = $email->Send();
+        $log->log($result, $to, $from, $subject, $htmlContent, $attachedFiles, $headers);
+		$this->resetMessenger();
 
 		return $result;
 	}
-
-	protected function startDebug($to, $from, $subject = '') {
-		if(self::inst()->SMTPDebug) {
-			$renderer = new MWMDebugView();
-			$renderer->writeHeader();
-			$renderer->writeInfo('Debugging mailer: ' . get_class($this), "Sending email from: $from, to: $to\n (subject: $subject)");
-		}
-	}
-
-	protected function endDebug($success = true) {
-		if(self::inst()->SMTPDebug) {
-			$renderer = new MWMDebugView();
-
-			if($success) {
-				if(!Director::is_cli()) echo '<p class="message success good">';
-				echo 'Email was sent successfully';
-				if(!Director::is_cli()) echo '</p>';
-			}
-			else {
-				if(!Director::is_cli()) echo '<p class="message warning error">';
-				echo 'Email was not sent successfully';
-				if(!Director::is_cli()) echo '</p>';
-			}
-
-			$renderer->writeParagraph('Debug mode stopped execution to prevent url redirection');
-			$renderer->writeFooter();
-			die();
-		}
-	}
-
-	protected function sendViaSES($email = null, $log = null) {
-		if(!$email) $email = self::inst();
-
-		$email->IsMail();
-
-		if(($key = $this->settings()->access_key) && ($secret = $this->settings()->access_secret)) {
-			if(!$email->PreSend())
-				return false;
-
-			$date = date('r');
-			$message = $email->GetSentMIMEMessage();
-
-			$data = array(
-				'Action' => 'SendRawEmail',
-				'RawMessage.Data' => base64_encode($message),
-			);
-
-			$headers = array(
-				'Date: ' . $date,
-				'Host: ' . str_replace(array('http://', 'https://'), '', $this->settings()->host),
-				'Content-Type: application/x-www-form-urlencoded',
-				'X-Amzn-Authorization: AWS3-HTTPS AWSAccessKeyId=' . urlencode($key) . ',Algorithm=HmacSHA256,Signature=' . base64_encode(hash_hmac('sha256', $date, $secret, true)),
-			);
-
-			if($log) {
-				$headers['CURL_HANDLE_KEY'] = 'SES-' . get_class($log) . '-' . $log->ID;
-				$args = array(
-					$headers['CURL_HANDLE_KEY'] => array(
-						'log' => $log,
-						'email' => $email
-					)
-				);
-			}
-			else
-				$args = array();
-
-			$response = $this->server()->request('', 'POST', http_build_query($data), $headers, array(), $args);
-
-			return $this->handleSESResponse($response, $email, $log);
-		}
-		else
-			throw new MWMMailer_Exception('Please set an AWS Access Key ID & Secret for the application to use');
-	}
-
-	public function handleSESResponse($response, $email = null, $log = null) {
-		if($response && !($response instanceof RestfulService)) {
-			$body = $response->getBody();
-
-			if($response->isError() || !$body) {
-				if($body && $log) {
-					if($mId = $this->server()->getValue($body, 'RequestId'))
-						$log->MessageID = $mId;
-
-					$log->Success = false;
-				}
-
-				if($body && ($e = $this->server()->getValues($body, 'Error')->first())) {
-					$dev = Director::isDev() ? "\n\n" . urldecode(http_build_query($e->toMap(), '', "\n")) : '';
-
-					throw new MWMMailer_Exception($e->Message . $dev);
-				}
-				else {
-					$dev = Director::isDev() ? "\n" . $response->getStatusDescription() : '';
-
-					throw new MWMMailer_Exception('Problem sending email via Amazon SES api: ' . $dev);
-				}
-			}
-
-			if($log) {
-				if($mId = $this->server()->getValue($body, 'SendRawEmailResult', 'MessageId'))
-					$log->MessageID = $mId;
-
-				$log->Success = true;
-				$log->Sent = date('Y-m-d H:i:s');
-			}
-		}
-
-		return true;
-	}
-
-	protected function sendViaMailGun($email = null, $log = null) {
-		if(!$email) $email = self::inst();
-
-		$email->IsMail();
-
-		if(!$email->PreSend())
-			return false;
-
-		$domain = $this->settings()->domain;
-
-		if(!$domain)
-			$domain = MWMDirector::baseWebsiteURL();
-
-		if($this->settings()->tracking) {
-			$data = array(
-				'o:tracking' => true,
-				'o:tracking-opens' => true,
-				'o:tracking-clients' => true,
-			);
-		}
-		else
-			$data = array();
-
-		$response = $this->server()->sendMessage($domain, $data, $email->GetSentMIMEMessage());
-
-		return $this->handleMailGunResponse($response, $email, $log);
-	}
-
-	public function handleMailGunResponse($response, $email = null, $log = null) {
-		if($response && !($response instanceof RestfulService)) {
-			$body = $response->getBody();
-
-			if($response->isError() || !$body) {
-				if($body && $log) {
-					if($mId = $this->server()->getValue($body, 'RequestId'))
-						$log->MessageID = $mId;
-
-					$log->Success = false;
-				}
-
-				if($body && ($e = $this->server()->getValues($body, 'Error')->first())) {
-					$dev = Director::isDev() ? "\n\n" . urldecode(http_build_query($e->toMap(), '', "\n")) : '';
-
-					throw new MWMMailer_Exception($e->Message . $dev);
-				}
-				else {
-					$dev = Director::isDev() ? "\n" . $response->getStatusDescription() : '';
-
-					throw new MWMMailer_Exception('Problem sending email via Amazon SES api: ' . $dev);
-				}
-			}
-
-			if($log) {
-				if($mId = $this->server()->getValue($body, 'SendRawEmailResult', 'MessageId'))
-					$log->MessageID = $mId;
-
-				$log->Success = true;
-				$log->Sent = date('Y-m-d H:i:s');
-			}
-		}
-
-		return true;
-	}
-
-	private $_server;
-
-	public function server() {
-		$thread = true;
-
-		if(!$this->_server) {
-			if($this->settings()->method == 'mail_gun') {
-				if($key = $this->settings()->api_key) {
-					if($endPoint = $this->settings()->api_endpoint)
-						$this->_server = new \Mailgun\Mailgun($key, $endPoint);
-					else
-						$this->_server = new \Mailgun\Mailgun($key);
-				}
-				else
-					throw new MWMMailer_Exception('Please set a Mail Gun API Key in your config');
-
-				$thread = false;
-			}
-			else
-				$this->_server = MilkywayRestful::create($this->settings()->host, 0)->persist();
-		}
-
-		if($thread) {
-			if(self::$multi_thread) {
-				if(self::$manual_queue_handle)
-					$this->_server->threading(true, 10, false);
-				else
-					$this->_server->threading();
-			}
-		}
-
-		return $this->_server;
-	}
-
-	function __destruct() {
-		if($this->_server)
-			$this->_server->close();
-	}
-
-	public static function handle_mail_queue() {
-		Email::mailer()->server()->consumeQueue();
-	}
-
-	public static function consume_curl_queue($responses, $server = null, $args = null) {
-		if(count($responses)) {
-			foreach($responses as $key => $res) {
-				if(!isset($res['response'])) continue;
-
-				if(count($args) && isset($args[$key]) && ($email = $args[$key]['email']) && ($log = $args[$key]['log'])) {
-					Email::mailer()->handleSESResponse($res['response'], $email, $log);
-					$log->write();
-				}
-				elseif(strstr('SES-', $key)) {
-					list($class, $id) = explode('-', str_replace('SES-', '', $key));
-
-					if($class && $id && ClassInfo::exists($class) && $log = DataObject::get($class)->byID((int)$id)) {
-						Email::mailer()->handleSESResponse($res['response'], null, $log);
-						$log->write();
-					}
-				}
-			}
-		}
-
-		self::clear();
-	}
 }
 
-class MWMMailer_Exception extends Exception { }
+class SendThis_Exception extends Exception { }
