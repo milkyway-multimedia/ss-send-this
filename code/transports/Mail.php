@@ -17,9 +17,13 @@ class Mail implements Transport {
 
     function send(\PHPMailer $messenger, \ViewableData $log = null)
     {
-        $messenger->action_function = function($result, $to, $cc, $bcc, $subject, $body, $from) use ($messenger) {
-            $response = compact($result, $to, $cc, $bcc, $subject, $body, $from);
-            SendThis::fire('sent', $messenger->getLastMessageID(), $to, $response, $response);
+        $messenger->action_function = function($success, $to, $cc, $bcc, $subject, $body, $from) use ($messenger, $log) {
+            $response = compact($success, $to, $cc, $bcc, $subject, $body, $from);
+
+            if($success)
+                SendThis::fire('sent', $messenger->getLastMessageID(), $to, $response, $response, $log);
+            else
+                throw new \SendThis_Exception('Message not successfully sent' . "\n\n" . nl2br(print_r($response, true)));
         };
 
         $messenger->send();

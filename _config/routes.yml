@@ -6,5 +6,5 @@ After:
 ---
 Director:
   rules:
-    'email-subscriptions//$Action/$Email/$Lists': 'SendThis_Controller'
+    'email-subscriptions//$Action/$Email': 'SendThis_Controller'
     '$Slug/mail-footer.gif': 'SendThis_Tracker'

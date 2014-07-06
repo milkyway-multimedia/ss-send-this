@@ -26,7 +26,7 @@ class Mandrill {
     {
         if ($request->isHEAD())
         {
-            return $this->confirmSubscription();
+            return $this->confirmSubscription($request->getBody());
         } else
         {
             $response  = json_decode($request->getBody(), true);
@@ -59,18 +59,19 @@ class Mandrill {
 
             if ($event == 'hard_bounce')
             {
-                $params['blacklist'] = true;
+                $params['permanent'] = true;
             }
 
             if(isset($this->eventMapping[$event]))
                 $event = $this->eventMapping[$event];
 
-            SendThis::fire($event, $email, $messageId, $response, $params);
+            SendThis::fire($event, $messageId, $email, $params, $response);
         }
     }
 
-    protected function confirmSubscription()
+    protected function confirmSubscription($message)
     {
+        SendThis::fire('hooked', '', '', ['subject' => 'Subscribed to Mandrill Web Hook', 'message' => $message]);
         return new \SS_HTTPResponse('', 200, 'success');
     }
 } 

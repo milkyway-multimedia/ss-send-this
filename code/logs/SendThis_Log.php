@@ -34,7 +34,8 @@ class SendThis_Log extends DataObject {
         'Success'       => 'Boolean',
         'Notify_Sender' => 'Varchar(255)',
         'Type'          => "Enum('html,plain','html')",
-        'Track_Open'    => 'Datetime',
+        'Opened'        => 'Datetime',
+        'Opens'         => 'Int',
         'Track_Client'  => 'Varchar(256)',
         'Track_Data'    => 'Text',
         'Track_Links'   => 'Boolean',
@@ -62,7 +63,7 @@ class SendThis_Log extends DataObject {
         'To',
         'Sent',
         'Success',
-        'Track_Open' => 'Opened',
+        'Track_Open'          => 'Opened',
         'Tracker_ForTemplate' => 'Details',
     );
 
@@ -171,54 +172,6 @@ class SendThis_Log extends DataObject {
         }
 
         return $emails;
-    }
-
-    /**
-     * Append array as query string to url, making sure the $url takes preference
-     *
-     * @param string $url
-     * @param array  $data
-     *
-     * @return String
-     */
-    public static function add_link_data($url, $data = array())
-    {
-        if (! count($data))
-        {
-            return $url;
-        }
-
-        // Make sure data in url takes preference over data from email log
-        if (strpos($url, '?') !== false)
-        {
-            list($newURL, $query) = explode('?', $url, 2);
-
-            $url = $newURL;
-
-            if ($query)
-            {
-                @parse_str($url, $current);
-
-                if ($current && count($current))
-                {
-                    $data = array_merge($data, $current);
-                }
-            }
-        }
-
-        if (count($data))
-        {
-            $linkData = array();
-
-            foreach ($data as $name => $value)
-            {
-                $linkData[$name] = urlencode($value);
-            }
-
-            $url = Controller::join_links($url, '?' . http_build_query($linkData));
-        }
-
-        return $url;
     }
 
     function getTitle()
@@ -483,87 +436,6 @@ class SendThis_Log extends DataObject {
         return null;
     }
 
-    function track($ip = null, $write = true)
-    {
-        $info = array();
-
-        $info['Referrer'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
-
-        if (isset($_SERVER['HTTP_USER_AGENT']) && $_SERVER['HTTP_USER_AGENT'])
-        {
-            $info['UserAgentString'] = $_SERVER['HTTP_USER_AGENT'];
-
-            $agent    = base64_encode($_SERVER['HTTP_USER_AGENT']);
-            $response = @file_get_contents("http://user-agent-string.info/rpc/rpctxt.php?key=free&ua={$agent}");
-
-            if ($response)
-            {
-                $data = explode('|', $response);
-
-                if (isset($data[0]) && $data[0] < 4)
-                {
-                    $info['Type']                = isset($data[1]) ? $data[1] : null;
-                    $info['Client']              = isset($data[2]) ? $data[2] : null;
-                    $info['ClientFull']          = isset($data[3]) ? $data[3] : null;
-                    $info['Icon']                = isset($data[7]) ? $data[7] : null;
-                    $info['OperatingSystem']     = isset($data[8]) ? $data[8] : null;
-                    $info['OperatingSystemFull'] = isset($data[9]) ? $data[9] : null;
-                    $info['OperatingSystemIcon'] = isset($data[13]) ? $data[13] : null;
-
-                    if (strtolower($info['Type']) == 'email client')
-                    {
-                        $this->Track_Client = $info['Client'];
-                    } elseif (strtolower($info['Type']) == 'browser' || strtolower($info['Type']) == 'mobile browser')
-                    {
-                        if (! preg_match('/.*[0-9]$/', $info['ClientFull']))
-                        {
-                            $this->Track_Client = _t(
-                                'SendThis_Log.EMAIL_CLIENT-MAC',
-                                'Mac Client (Apple Mail or Microsoft Entourage)'
-                            );
-                        } elseif ($info['Referrer'])
-                        {
-                            foreach (static::config()->web_based_clients as $name => $url)
-                            {
-                                if (preg_match("/$url/", $info['Referrer']))
-                                {
-                                    $this->Track_Client = _t(
-                                        'SendThis_Log.WEB_CLIENT-' . strtoupper(str_replace(' ', '_', $name)),
-                                        $name
-                                    );
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (! $this->Track_Client)
-                        {
-                            $this->Track_Client = _t('SendThis_Log.BROWSER_BASED', 'Web Browser');
-                        }
-                    }
-                }
-            }
-        }
-
-        if ($ip)
-        {
-            $geo = @file_get_contents("http://www.geoplugin.net/json.gp?ip=" . $ip);
-
-            if (($geo = json_decode($geo)) && $country = $geo->geoplugin_countryName)
-            {
-                $info['Country'] = $country;
-            }
-        }
-
-        $this->Tracker    = $info;
-        $this->Track_Open = SS_Datetime::now()->Rfc2822();
-
-        if ($write)
-        {
-            $this->write();
-        }
-    }
-
     function init($type = 'html', &$headers = null)
     {
         $this->Type = $type;
@@ -576,279 +448,13 @@ class SendThis_Log extends DataObject {
             } elseif (isset($headers['X-MilkywayMessageID']))
             {
                 $this->MessageID = $headers['X-MilkywayMessageID'];
-            }
-
-            foreach ($headers as $k => $v)
+            } elseif (isset($headers['Message-ID']))
             {
-                if (strpos($k, 'Log-Relation-') === 0)
-                {
-                    $rel        = str_replace('Log-Relation-', '', $k) . 'ID';
-                    $this->$rel = $v;
-
-                    unset($headers[$k]);
-                }
-            }
-
-            if (SendThis::config()->tracking && isset($headers['Track-Links']) && $headers['Track-Links'])
-            {
-                $this->Track_Links = true;
-                unset($headers['Track-Links']);
-            }
-
-            if (isset($headers['Notify-On-Bounce']) && $headers['Notify-On-Bounce'])
-            {
-                $this->Notify_Sender = $headers['Notify-On-Bounce'];
-                unset($headers['Notify-On-Bounce']);
-            }
-
-            if (isset($headers['Links-Data']) && $headers['Links-Data'])
-            {
-                $data = $headers['Links-Data'];
-
-                if (is_array($data))
-                {
-                    $this->LinkData = $data;
-                } elseif (is_object($data))
-                {
-                    $this->LinkData = json_decode(json_encode($data), true);
-                } else
-                {
-                    @parse_str($data, $linkData);
-
-                    if ($linkData && count($linkData))
-                    {
-                        $this->LinkData = $linkData;
-                    }
-                }
-
-                unset($headers['Links-Data']);
-            }
-
-            if (isset($headers['Links-AttachHash']) && $headers['Links-AttachHash'])
-            {
-                $linkData = isset($linkData) ? $linkData : isset($data) ? $data : array();
-
-                $this->generateHash();
-
-                if ($headers['Links-AttachHash'] === true || $headers['Links-AttachHash'] == 1)
-                {
-                    if (! isset($linkData['utm_term']))
-                    {
-                        $linkData['utm_term'] = $this->Track_Hash;
-                    }
-                } else
-                {
-                    if (! isset($linkData[$headers['Links-AttachHash']]))
-                    {
-                        $linkData[$headers['Links-AttachHash']] = $this->Track_Hash;
-                    }
-                }
-
-                $this->LinkData = $linkData;
-
-                unset($headers['Links-AttachHash']);
+                $this->MessageID = $headers['Message-ID'];
             }
         }
-
-        $this->write();
 
         return $this;
-    }
-
-    function log($result, $to, $from, $subject, $content, $attachedFiles = null, $headers = null, $write = true)
-    {
-        $success = true;
-
-        if (is_array($result))
-        {
-            $to          = isset($result['to']) ? $result['to'] : $to;
-            $from        = isset($result['from']) ? $result['from'] : $from;
-            $headers     = isset($result['headers']) ? $result['headers'] : $headers;
-            $this->Notes = isset($result['messages']) ? implode("\n", (array) $result['messages']) : null;
-        } elseif (is_string($result))
-        {
-            $this->Notes = $result;
-            $success     = false;
-        }
-
-        $this->To      = $to;
-        $this->From    = $from;
-        $this->Mailer  = get_class(Email::mailer());
-        $this->Subject = $subject;
-
-        $this->Success = $success;
-
-        if ($this->Success && ! $this->Sent)
-        {
-            $this->Sent = date('Y-m-d H:i:s');
-        }
-
-        $this->Cc      = isset($headers['Cc']) ? $headers['Cc'] : null;
-        $this->Bcc     = isset($headers['Bcc']) ? $headers['Bcc'] : null;
-        $this->ReplyTo = isset($headers['Reply-To']) ? $headers['Reply-To'] : null;
-
-        $attachments = array();
-        $count       = 1;
-        if (is_array($attachedFiles) && count($attachedFiles))
-        {
-            foreach ($attachedFiles as $attached)
-            {
-                $file = '';
-                if (isset($attached['filename']))
-                {
-                    $file .= $attached['filename'];
-                }
-                if (isset($attached['mimetype']))
-                {
-                    $file .= ' <' . $attached['mimetype'] . '>';
-                }
-
-                if (! trim($file))
-                {
-                    $attachments[] = $count . '. File has no info';
-                } else
-                {
-                    $attachments[] = $count . '. ' . $file;
-                }
-
-                $count ++;
-            }
-        }
-
-        if (count($attachments))
-        {
-            $this->Attachments = count($attachments) . ' files attached: ' . "\n" . implode("\n", $attachments);
-        }
-
-        if ($member = Member::currentUser())
-        {
-            $this->SentByID = $member->ID;
-        }
-
-        if ($write)
-        {
-            $this->write();
-        }
-    }
-
-    function insertTracker($content, $replace = array('{{tracker}}', '{{tracker-url}}'))
-    {
-        $url = Director::absoluteURL(str_replace('$Hash', urlencode($this->Slug), SendThis_Tracker::config()->slug));
-
-        return str_replace($replace, array('<img src="' . $url . '" alt="" />', $url), $content);
-    }
-
-    function removeTracker($content, $replace = array('{{tracker}}', '{{tracker-url}}'))
-    {
-        $url = Director::absoluteURL(str_replace('$Hash', urlencode($this->Slug), SendThis_Tracker::config()->slug));
-
-        return str_replace(array_merge($replace, array('<img src="' . $url . '" alt="" />', $url)), '', $content);
-    }
-
-    function trackLinks($content)
-    {
-        if (! $this->Track_Links && ! count($this->LinkData))
-        {
-            return $content;
-        }
-
-        if (preg_match_all("/<a\s[^>]*href=[\"|']([^\"]*)[\"|'][^>]*>(.*)<\/a>/siU", $content, $matches))
-        {
-            if (isset($matches[1]) && ($urls = $matches[1]))
-            {
-                $id = (int) $this->ID;
-
-                $replacements = array();
-
-                array_unique($urls);
-
-                $sorted = array_combine($urls, array_map('strlen', $urls));
-                arsort($sorted);
-
-                foreach ($sorted as $url => $length)
-                {
-                    if ($this->Track_Links)
-                    {
-                        $link = $this->Links()->filter('Original', Convert::raw2sql($url))->first();
-
-                        if (! $link)
-                        {
-                            $link           = SendThis_Link::create();
-                            $link->Original = $this->getURLWithData($url);
-                            $link->LogID    = $id;
-                            $link->write();
-                        }
-
-                        $replacements['"' . $url . '"'] = $link->URL;
-                        $replacements["'$url'"]         = $link->URL;
-                    } else
-                    {
-                        $replacements['"' . $url . '"'] = $this->getURLWithData($url);
-                        $replacements["'$url'"]         = $this->getURLWithData($url);
-                    }
-                }
-
-                $content = str_ireplace(array_keys($replacements), array_values($replacements), $content);
-            }
-        }
-
-        return $content;
-    }
-
-    function getURLWithData($url)
-    {
-        if (! count($this->LinkData))
-        {
-            return $url;
-        }
-
-        return static::add_link_data($url, $this->LinkData);
-    }
-
-    function bounced($email, $write = false)
-    {
-        if ($this->Notify_Sender && ($this->From || $this->SentBy()->exists()))
-        {
-            $from = $this->Notify_Sender;
-
-            if (! Email::is_valid_address($from))
-            {
-                $from = $this->SentBy()->exists() ? $this->SentBy()->ForEmail : $this->From;
-            }
-
-            $e = Email::create(
-                null,
-                $from,
-                _t(
-                    'SendThis_Log.SUBJECT-EMAIL_BOUNCED',
-                    'Email bounced: {subject}',
-                    array('subject' => $this->Subject)
-                ),
-                _t(
-                    'SendThis_Log.EMAIL_BOUNCED',
-                    'An email (subject: {subject}) addressed to {to} sent via {application} has bounced. For security reasons, we cannot display its contents.',
-                    array(
-                        'subject'     => $this->Subject,
-                        'application' => singleton('LeftAndMain')->ApplicationName,
-                        'to'          => $email,
-                    )
-                ) . "\n\n<p>" . $this->Notes . '</p>'
-            );
-
-            $e->setTemplate(array('BounceNotification_Email', 'GenericEmail'));
-
-            $e->populateTemplate($this);
-
-            $e->addCustomHeader('X-Milkyway-Priority', 1);
-            $e->addCustomHeader('X-Priority', 1);
-
-            $e->send();
-        }
-
-        if ($write)
-        {
-            $this->write();
-        }
     }
 
     function canView($member = null)

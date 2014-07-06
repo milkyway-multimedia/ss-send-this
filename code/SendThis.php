@@ -3,12 +3,6 @@
  * Milkyway Multimedia
  * SendThis.php
  *
- * Sending emails with optional logging, bounce handling and tracking with the CMS
- * Currently supporting: SMTP, PHP Mail, Mandrill and Amazon SES API
- * Bounce handling is only handled if using either:
- * - Amazon SES
- * - Mandrill
- *
  * This class throws exceptions, but can be set to not do so, in order to
  * work like the SS Mailer class which does not throw exceptions
  *
@@ -34,6 +28,14 @@ class SendThis extends Mailer {
 	public static function throw_exceptions($flag = true) {
 		self::$throw_exceptions = $flag;
 	}
+
+    public static function now($email, $callback = null, $transport = null) {
+        //@todo implement a quick send function
+    }
+
+    public static function later($email, $callback = null, $transport = null) {
+        //@todo implement a quick queue function
+    }
 
     public static function listen($hooks, $item) {
         $hooks = (array) $hooks;
@@ -89,6 +91,17 @@ class SendThis extends Mailer {
         $name = $prepend ? $prepend . '+no-reply' : 'no-reply';
 
         return $name . '@' . trim(str_replace(array('http://', 'https://', 'www.'), '', Director::protocolAndHost()), ' /');
+    }
+
+    public static function message_id_from_headers($headers) {
+        if(isset($headers['Message-ID']))
+            return $headers['Message-ID'];
+
+        if(isset($headers['X-SilverStripeMessageID']))
+            return $headers['X-SilverStripeMessageID'];
+
+        if(isset($headers['X-MilkywayMessageID']))
+            return $headers['X-MilkywayMessageID'];
     }
 
     public function __construct() {
@@ -247,18 +260,11 @@ class SendThis extends Mailer {
 			}
 
 			if(isset($headers['X-SilverStripeMessageID'])) {
-				if(defined('BOUNCE_EMAIL')) {
-					$bounceAddress = BOUNCE_EMAIL;
+                if(!isset($headers['Message-ID']))
+                    $headers['Message-ID'] = $headers['X-SilverStripeMessageID'];
 
-					if($doFrom)
-						$bounceAddress = "$doFrom <$bounceAddress>";
-
-					$email->ReturnPath = $bounceAddress;
-				}
-				else {
-					$headers['X-MilkywayMessageID'] = $headers['X-SilverStripeMessageID'];
-					unset($headers['X-SilverStripeMessageID']);
-				}
+                $headers['X-MilkywayMessageID'] = $headers['X-SilverStripeMessageID'];
+                unset($headers['X-SilverStripeMessageID']);
 			}
 
 			if(isset($headers['X-SilverStripeSite'])) {
@@ -271,11 +277,20 @@ class SendThis extends Mailer {
 				unset($headers['Reply-To']);
 			}
 
-			if(isset($headers["X-Priority"])) {
-				$email->Priority = $headers["X-Priority"];
-				unset($headers["X-Priority"]);
+			if(isset($headers['X-Priority'])) {
+				$email->Priority = $headers['X-Priority'];
+				unset($headers['X-Priority']);
 			}
 		}
+
+        if(defined('BOUNCE_EMAIL')) {
+            $bounceAddress = BOUNCE_EMAIL;
+
+            if($doFrom)
+                $bounceAddress = "$doFrom <$bounceAddress>";
+
+            $email->ReturnPath = $bounceAddress;
+        }
 
 		// Email has higher chance of being received if there is a too email sent...
 		if($this->noTo && $to = Email::config()->default_to_email) {
@@ -298,68 +313,76 @@ class SendThis extends Mailer {
 		return $email;
 	}
 
-	public function sendPlain($to, $from, $subject, $content, $attachedFiles = null, $headers = null) {
-		$log = SendThis_Log::create()->init('plain', $headers);
-        $log->Transport = get_class($this->transport);
-        $this->transport->applyHeaders($headers);
-		$email = $this->message($to, $from, $subject, $attachedFiles, $headers);
+	public function send($type = 'html', $to, $from, $subject, $content, $attachedFiles = null, $headers = null, $plainContent = null) {
+        $this->resetMessenger();
 
-		if($email) {
-			$email->Body = $log->removeTracker(strip_tags($content));
-			$email->isHTML(false);
+        if(static::config()->logging) {
+		    $log = SendThis_Log::create()->init($type, $headers);
+            $log->Transport = get_class($this->transport);
+        }
+        else
+            $log = null;
+
+        $messageId = $this->message_id_from_headers($headers);
+        $params = compact($to, $from, $subject, $content, $attachedFiles, $headers);
+
+        static::fire('up', $messageId, $to, $params, $params, $log, $headers);
+
+        $this->transport->applyHeaders($headers);
+		$message = $this->message($to, $from, $subject, $attachedFiles, $headers);
+
+		if($message) {
+            $params['message'] = $message;
+
+            $message->Body = $type != 'html' ? strip_tags($content) : $content;
+
+            if($type == 'html' || $plainContent)
+                $message->AltBody = $plainContent ? $plainContent : strip_tags($content);
+
+            static::fire('sending', $messageId, $to, $params, $params, $log);
+
+            $message->isHTML($type == 'html');
 
 			try {
-				$result = $this->transport->start($email, $log);
+				$result = $this->transport->start($message, $log);
 			} catch(Exception $e) {
 				$result = $e->getMessage();
 
-                if(self::$throw_exceptions)
+                $params['message'] = $result;
+
+                if(self::$throw_exceptions) {
+                    static::fire('failed', $message->getLastMessageID() ?: $messageId, $to, $params, $params, $log);
                     throw $e;
+                }
 			}
 
-			if(!$result || $email->IsError())
-				$result = $email->ErrorInfo;
+			if(!$result || $message->IsError())
+				$result = $message->ErrorInfo;
+
+            $messageId = $message->getLastMessageID() ?: $messageId;
 		}
         else
             $result = 'Email has been unsubscribed/blacklisted';
 
-        $log->log($result, $to, $from, $subject, $content, $attachedFiles, $headers);
+        if($result !== true) {
+            $params['message'] = $result;
+            static::fire('failed', $messageId, $to, $params, $params, $log);
+        }
+
+        static::fire('down', $messageId, $to, $params, $params, $log);
+
         $this->resetMessenger();
 
 		return $result;
 	}
 
-	public function sendHTML($to, $from, $subject, $htmlContent, $attachedFiles = null, $headers = null, $plainContent = null) {
-		$log = SendThis_Log::create()->init('html', $headers);
-        $log->Transport = get_class($this->transport);
-        $this->transport->applyHeaders($headers);
-		$email = $this->message($to, $from, $subject, $attachedFiles, $headers);
+    public function sendHTML($to, $from, $subject, $htmlContent, $attachedFiles = null, $headers = null, $plainContent = null) {
+        return $this->send('html', $to, $from, $subject, $htmlContent, $attachedFiles, $headers, $plainContent);
+    }
 
-		if($email) {
-			$email->Body = $log->insertTracker($log->trackLinks($htmlContent));
-			$email->AltBody = $log->removeTracker($plainContent ? $plainContent : strip_tags($htmlContent));
-			$email->IsHTML();
-
-			try {
-				$result = $this->transport->start($email, $log);
-			} catch(Exception $e) {
-				$result = $e->getMessage();
-
-                if(self::$throw_exceptions)
-                    throw $e;
-			}
-
-			if(!$result || $email->IsError())
-				$result = $email->ErrorInfo;
-		}
-        else
-		    $result = 'Email has been unsubscribed/blacklisted';
-
-        $log->log($result, $to, $from, $subject, $htmlContent, $attachedFiles, $headers);
-		$this->resetMessenger();
-
-		return $result;
-	}
+    public function sendPlain($to, $from, $subject, $plainContent, $attachedFiles = null, $headers = null) {
+        return $this->send('plain', $to, $from, $subject, $plainContent, $attachedFiles, $headers);
+    }
 }
 
 class SendThis_Exception extends Exception { }

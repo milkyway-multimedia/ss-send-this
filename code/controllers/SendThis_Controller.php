@@ -44,7 +44,7 @@ class SendThis_Controller extends Controller {
 
 	function webHook($request) {
         $handlers = $this->config()->web_hooks;
-        $action = $request->param('Action');
+        $action = $request->param('Email');
 
         if(isset($handlers[$action])) {
             $settings = $handlers[$action];
@@ -123,9 +123,9 @@ class SendThis_Controller extends Controller {
 	}
 
 	function links($r) {
-		if(($hash = Convert::raw2sql($r->param('Email'))) && $link = MWMMailer_Link::get()->filter('Hash', $hash)->first()) {
-			if($redirect = $link->track())
-				return $this->redirect($redirect, 301);
+		if(($slug = Convert::raw2sql($r->param('Email'))) && $link = MWMMailer_Link::get()->filter('Slug', $slug)->first()) {
+            SendThis::fire('clicked', '', '', ['slug' => $slug], ['slug' => $slug], $link);
+			return $this->redirect($link->Link(), 301);
 		}
 
 		return $this->httpError(404);

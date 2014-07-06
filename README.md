@@ -27,24 +27,26 @@ Add the following to your composer.json file
 ### Web Hook Events
 To handle web hooks, events are fired. The namespace events currently being used are (not all web hooks use all these events):
 
-- up: The mailer is initialised
+- up: The mailer is initialised (the initial headers are passed as an additional argument at this point, which can be edited by listeners)
 - down: The mailer has stopped processing the email
+- sending: The email will enter the transport for sending
 - sent: The email was successfully sent via the transport
 - failed: The email was not sent successfully via the transport
 - delivered: The email was successfully delivered by the end point (this differs to the 'sent' hook, which is called by the transport internally)
 - bounced: The email bounced - on a hard bounce, the default logging handler fires the 'spam' event
 - opened: The email was opened
-- clicked: A link in the email was clicked
+- clicked: A link in the email was clicked (instead of passing a log, a link object will be passed as the fifth argument)
 - spam: The email was marked as spam, or triggered a complaint
 - delayed: The email was delayed to avoid flooding (note: most transactional email systems will implement this system, but not all will fire an even when doing so)
 - rejected: The email was rejected by the end point
-- unsubscribed: The email was unsubscribed by the end point
-- whitelisted: The email was whitelisted at the end point
-- blacklisted: The email was blacklisted at the end point
+- unsubscribed: The email address was unsubscribed by the end point
+- whitelisted: The email address was whitelisted at the end point
+- blacklisted: The email address was blacklisted at the end point
+- hooked: Web hook has been asked for confirmation from this application
 
 You can use these web hooks to sync your application to the transactional email system.
 
-Events pass four arguments when called: string $messageId, string $email, array $params, array $response, $log = null (log is only passed for internal events. For web hooks, you can find the log by message id)
+Events pass four arguments when called: string $messageId, string|array $email, array $params, array $response, $log = null (log is only passed for internal events. For web hooks, you can find the log by message id)
 
 ### Transports
 By default, this module will use PHP Mail (as per the normal Silverstripe mailer, but implementing PHPMailer). To use the other setups, please read on.
@@ -61,23 +63,26 @@ The following options are available for your YAML config.
     SendThis:
       transport: 'smtp|ses|mandrill'
 
-      host: 'only set if you are using smtp transport'
+      host: 'only needed if you are using smtp transport'
       port: '(optional) only set if you are using smtp transport'
       username: '(optional) only set if you are using smtp transport'
       password: '(optional) only set if you are using smtp transport'
       secured_with: '(optional) only set if you are using smtp transport'
       keep_alive: '(optional) only set if you are using smtp transport'
 
-      key: 'only set if you are using ses or mandrill transport'
-      secret: 'only set if you are using ses transport'
+      key: 'only needed if you are using ses or mandrill transport'
+      secret: 'only needed if you are using ses transport'
 
       logging: true
       tracking: false
       api_tracking: true (this is slightly different to the above, in that it only uses tracking on the transport rather than CMS based tracking)
       allow_blacklist: true
       from_same_domain_only: true
+      notify_on_fail: false
+      blacklist_after_bounced: 2
 
       filter_from_reports: (you can specify some emails that should be filtered from reports in the CMS, such as test emails)
+      filter_from_logs: (you can specify emails that will completely skip logging when sent to)
       headers: (you can specify some default headers that will be sent with all emails as an associative array)
 
 ```

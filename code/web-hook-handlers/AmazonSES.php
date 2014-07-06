@@ -26,20 +26,15 @@ class AmazonSES {
             elseif(($data->Type == 'Complaint' || $data->Type == 'Notification') && isset($response['notificationType']) && $response['notificationType'] == 'Complaint') {
                 $this->doComplaintHandling($response);
             }
+            elseif(($data->Type == 'Delivery' || $data->Type == 'Notification') && isset($response['notificationType']) && $response['notificationType'] == 'Delivery') {
+                $this->doDeliveryHandling($response);
+            }
         }
     }
 
     protected function confirmSubscription($url, $message = '') {
-        if(SendThis::config()->debugging && $email = Email::config()->admin_email) {
-            mail(
-                $email,
-                'Amazon SNS - Subscription Confirmation received',
-                $message,
-                "Content-type: text/html\nFrom: " . $email
-            );
-        }
-
-        file_get_contents($url);
+        SendThis::fire('hooked', '', '', ['subject' => 'Subscribed to Amazon SNS', 'message' => $message]);
+        return file_get_contents($url);
     }
 
     protected function doBounceHandling($response) {
@@ -51,7 +46,23 @@ class AmazonSES {
                     $permanent = (isset($response['bounce']['bounceType']) && $response['bounce']['bounceType'] == 'Permanent');
                     $messageId = isset($response['mail']) && isset($response['mail']['messageId']) ? $response['mail']['messageId'] : '';
 
-                    SendThis::fire('bounced', $messageId, $bounce['emailAddress'], ['blacklist' => $permanent, 'details' => $bounce], $response);
+                    $message = [];
+
+                    if(isset($params['details'])) {
+                        if(isset($params['details']['status']))
+                            $message[] = 'Status: ' . $bounce['details']['status'];
+                        if(isset($params['details']['action']))
+                            $message[] = 'Action: ' . $bounce['details']['action'];
+                        if(isset($params['details']['diagnosticCode']))
+                            $message[] = 'Diagnostic Code: ' . $bounce['details']['diagnosticCode'];
+                    }
+
+                    if(count($message))
+                        $message = "\n\nBounce Details:\n" . implode("\n", $message);
+                    else
+                        $message = 'Bounced';
+
+                    SendThis::fire('bounced', $messageId, $bounce['emailAddress'], ['permanent' => $permanent, 'message' => $message, 'details' => $bounce], $response);
                 }
             }
         }
@@ -64,8 +75,29 @@ class AmazonSES {
             foreach($complaints as $complaint) {
                 if(isset($complaint['emailAddress'])) {
                     $messageId = isset($response['mail']) && isset($response['mail']['messageId']) ? $response['mail']['messageId'] : '';
-                    SendThis::fire('spam', $messageId, $complaint['emailAddress'], ['blacklist' => true, 'details' => $complaint], $response);
+
+                    $message = sprintf('%s has logged a complaint, and has been blocked from receiving emails from this domain%s',
+                        $complaint['emailAddress'],
+                        isset($complaint['complaintFeedbackType']) ? '. Reason: ' . $complaint['complaintFeedbackType'] : ''
+                    );
+
+                    SendThis::fire('spam', $messageId, $complaint['emailAddress'], ['blacklist' => true, 'details' => $complaint, 'message' => $message], $response);
                 }
+            }
+        }
+    }
+
+    protected function doDeliveryHandling($response) {
+        if(isset($response['delivery']) && isset($response['delivery']['recipients'])) {
+            $recipients = is_array($response['delivery']['recipients']) ? $response['delivery']['recipients'] : array($response['delivery']['recipients']);
+
+            foreach($recipients as $recipient) {
+                $messageId = isset($response['mail']) && isset($response['mail']['messageId']) ? $response['mail']['messageId'] : '';
+                SendThis::fire('delivered', $messageId, $recipient, [
+                        'details' => $response['delivery'],
+                        'timestamp' => isset($response['delivery']['timestamp']) ? time($response['delivery']['timestamp']) : ''
+                    ], $response
+                );
             }
         }
     }

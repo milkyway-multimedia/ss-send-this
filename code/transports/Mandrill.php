@@ -51,13 +51,14 @@ class Mandrill extends Mail {
 
         $results = $response->json();
 
-        if($log && isset($results['_id']))
-            $log->MessageID = $results['_id'];
+        $messageId = isset($results['_id']) ? $results['_id'] : '';
+        $email = isset($results['email']) ? $results['email'] : '';
 
         $status = isset($results['status']) ? $results['status'] : 'failed';
 
         if((($statusCode = $response->getStatusCode()) && ($statusCode < 200 || $this->statusCode > 399))
-           || !in_array($status, ['sent', 'queued', 'scheduled'])) {
+           || !in_array($status, ['sent', 'queued', 'scheduled'])
+           || isset($results['reject_reason'])) {
             $message = 'Problem sending via Mandrill' . "\n";
             $message .= urldecode(http_build_query($results, '', "\n"));
         }
@@ -71,10 +72,7 @@ class Mandrill extends Mail {
             throw new \SendThis_Exception($message);
         }
 
-        if($log) {
-            $log->Success = true;
-            $log->Sent = date('Y-m-d H:i:s');
-        }
+        SendThis::fire('sent', $messageId ?: $messenger->getLastMessageID(), $email, $results, $results, $log);
 
         return true;
     }

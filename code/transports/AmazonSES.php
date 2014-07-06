@@ -72,22 +72,17 @@ class AmazonSES extends PHP {
         }
 
         if($message) {
-            $success = false;
-
             $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
             $message .= 'Message: ' . $response->getReasonPhrase();
             throw new \SendThis_Exception($message);
         }
 
-        if($log) {
-            if(($result = $results->SendRawEmailResult) && isset($result['MessageId']))
-                $log->MessageID = $result['MessageId'];
+        $messageId = '';
 
-            $log->Success = true;
-            $log->Sent = date('Y-m-d H:i:s');
-        }
+        if(($result = $results->SendRawEmailResult) && isset($result['MessageId']))
+            $messageId = $result['MessageId'];
 
-        SendThis::fire('sent', $messageId, $email, $results, $results);
+        SendThis::fire('sent', $messageId, $messenger->getToAddresses(), $results, $results, $log);
 
         return true;
     }

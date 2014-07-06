@@ -9,11 +9,16 @@ class SendThis_Tracker extends Controller {
     private static $slug = '$Slug/mail-footer.gif';
 
     function index($r) {
-        if($r->param('Hash')) {
+        if($r->param('Slug')) {
             $id = Convert::raw2sql($r->param('Slug'));
 
-            if(($record = SendThis_Log::get()->filter('Track_Hash', $id)->first()) && !$record->Track_Open)
-                $record->track($r->getIP());
+            if(($log = SendThis_Log::get()->filter('Slug', $id)->first())) {
+                SendThis::fire('opened', $log->MessageID, $log->To, ['IP' => $r->getIP()], [
+                        'Referrer' => isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null,
+                        'UserAgent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null,
+                    ], $log
+                );
+            }
         }
 
         $response = new SS_HTTPResponse(base64_decode('R0lGODlhAQABAJAAAP8AAAAAACH5BAUQAAAALAAAAAABAAEAAAICBAEAOw=='), 200, 'OK');
