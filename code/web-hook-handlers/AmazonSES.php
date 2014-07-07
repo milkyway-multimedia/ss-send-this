@@ -48,14 +48,12 @@ class AmazonSES {
 
                     $message = [];
 
-                    if(isset($params['details'])) {
-                        if(isset($params['details']['status']))
-                            $message[] = 'Status: ' . $bounce['details']['status'];
-                        if(isset($params['details']['action']))
-                            $message[] = 'Action: ' . $bounce['details']['action'];
-                        if(isset($params['details']['diagnosticCode']))
-                            $message[] = 'Diagnostic Code: ' . $bounce['details']['diagnosticCode'];
-                    }
+                        if(isset($bounce['status']))
+                            $message[] = 'Status: ' . $bounce['status'];
+                        if(isset($bounce['action']))
+                            $message[] = 'Action: ' . $bounce['action'];
+                        if(isset($bounce['diagnosticCode']))
+                            $message[] = 'Diagnostic Code: ' . $bounce['diagnosticCode'];
 
                     if(count($message))
                         $message = "\n\nBounce Details:\n" . implode("\n", $message);
