@@ -29,11 +29,11 @@ class SendThis extends Mailer {
 		self::$throw_exceptions = $flag;
 	}
 
-    public static function now($email, $callback = null, $transport = null) {
+    public static function now($email, $callback = null, $transport = []) {
         //@todo implement a quick send function
     }
 
-    public static function later($email, $callback = null, $transport = null) {
+    public static function later($email, $callback = null, $transport = []) {
         //@todo implement a quick queue function
     }
 
