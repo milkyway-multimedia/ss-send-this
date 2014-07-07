@@ -82,9 +82,11 @@ class SendThis extends Mailer {
                 self::$listeners[$hook] = [];
 
             if(!is_callable($item))
-                $item = [$item, $hook];
+                $listener = [$item, $hook];
+            else
+                $listener = $item;
 
-            self::$listeners[$hook][] = $item;
+            self::$listeners[$hook][] = $listener;
         }
     }
 
@@ -190,7 +192,7 @@ class SendThis extends Mailer {
         $transport = $this->config()->transport;
 
         if(isset($available[$transport]))
-            $this->transport = Object::create($available['transport'], $this->messenger);
+            $this->transport = Object::create($available[$transport], $this->messenger);
         else
             $this->transport = Object::create('\Milkyway\SendThis\Transports\SendThis_Default', $this->messenger);
 
@@ -249,7 +251,7 @@ class SendThis extends Mailer {
 
 		list($doFrom, $doFromName) = $this->split_email($from);
 
-		if($sameDomain = self::settings()->from_same_domain_only) {
+		if($sameDomain = static::config()->from_same_domain_only) {
 			$base = '@' . MWMDirector::baseWebsiteURL();
 
 			if(!is_bool($sameDomain) || !$doFrom || !(substr($doFrom, -strlen($base)) === $base)) {
@@ -384,9 +386,13 @@ class SendThis extends Mailer {
             $log = null;
 
         $messageId = $this->message_id_from_headers($headers);
-        $params = compact($to, $from, $subject, $content, $attachedFiles, $headers);
+        $params = compact('to', 'from', 'subject', 'content', 'attachedFiles', 'headers');
+
+        $headers = (object) $headers;
 
         static::fire('up', $messageId, $to, $params, $params, $log, $headers);
+
+        $headers = (array) $headers;
 
         $this->transport->applyHeaders($headers);
 		$message = $this->message($to, $from, $subject, $attachedFiles, $headers);

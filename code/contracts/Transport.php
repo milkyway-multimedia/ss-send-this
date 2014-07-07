@@ -8,6 +8,6 @@
  *
  */
 interface Transport {
-    function send(\PHPMailer $email, \ViewableData $log = null);
+    function start(\PHPMailer $email, \ViewableData $log = null);
     function applyHeaders(array &$headers);
 }

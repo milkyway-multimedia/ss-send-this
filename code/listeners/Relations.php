@@ -7,17 +7,17 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Relations {
-    public function up($messageId, $email, $params, $response, $log, &$headers) {
+    public function up($messageId, $email, $params, $response, $log, $headers) {
         if(!$log) return;
 
-        foreach ($headers as $k => $v)
+        foreach (get_object_vars($headers) as $k => $v)
         {
             if (strpos($k, 'X-HasOne-') === 0)
             {
                 $rel        = str_replace('X-HasOne-', '', $k) . 'ID';
                 $log->$rel = $v;
 
-                unset($headers[$k]);
+                unset($headers->$k);
             }
         }
     }

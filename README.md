@@ -27,7 +27,7 @@ Add the following to your composer.json file
 ### Web Hook Events
 To handle web hooks, events are fired. The namespace events currently being used are (not all web hooks use all these events):
 
-- up: The mailer is initialised (the initial headers are passed as an additional argument at this point, which can be edited by listeners)
+- up: The mailer is initialised (the initial headers are passed as an additional argument - casted as an object - at this point, which can be edited by listeners)
 - down: The mailer has stopped processing the email
 - sending: The email will enter the transport for sending
 - sent: The email was successfully sent via the transport

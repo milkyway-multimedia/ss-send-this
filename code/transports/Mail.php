@@ -15,7 +15,7 @@ class Mail implements Transport {
         return $messenger;
     }
 
-    function send(\PHPMailer $messenger, \ViewableData $log = null)
+    function start(\PHPMailer $messenger, \ViewableData $log = null)
     {
         $messenger->action_function = function($success, $to, $cc, $bcc, $subject, $body, $from) use ($messenger, $log) {
             $response = compact($success, $to, $cc, $bcc, $subject, $body, $from);

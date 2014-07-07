@@ -21,10 +21,10 @@ class AmazonSES extends PHP {
             $this->location = \SendThis::config()->location;
     }
 
-    function send(\PHPMailer $messenger, \ViewableData $log = null)
+    function start(\PHPMailer $messenger, \ViewableData $log = null)
     {
         if(($key = \SendThis::config()->key) && ($secret = \SendThis::config()->secret)) {
-            if(!$this->PreSend())
+            if(!$messenger->PreSend())
                 return false;
 
             $date = date('r');

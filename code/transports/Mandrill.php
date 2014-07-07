@@ -21,10 +21,10 @@ class Mandrill extends Mail {
             $this->endpoint = \SendThis::config()->endpoint;
     }
 
-    function send(\PHPMailer $messenger, \ViewableData $log = null)
+    function start(\PHPMailer $messenger, \ViewableData $log = null)
     {
         if(($key = \SendThis::config()->key)) {
-            if(!$this->PreSend())
+            if(!$messenger->PreSend())
                 return false;
 
             $response = $this->http()->post($this->endpoint('messages/send-raw'), [
@@ -44,6 +44,7 @@ class Mandrill extends Mail {
 
     public function handleResponse(\GuzzleHttp\Message\ResponseInterface $response, $messenger = null, $log = null) {
         $body = $response->getBody();
+        $failed = ($statusCode = $response->getStatusCode()) && ($statusCode < 200 || $statusCode > 399);
         $message = '';
 
         if(!$body)
@@ -51,28 +52,31 @@ class Mandrill extends Mail {
 
         $results = $response->json();
 
-        $messageId = isset($results['_id']) ? $results['_id'] : '';
-        $email = isset($results['email']) ? $results['email'] : '';
+        if(!count($results))
+            $message = 'No results received from Mandrill' . "\n";
 
-        $status = isset($results['status']) ? $results['status'] : 'failed';
+        foreach($results as $result) {
+            $messageId = isset($result['_id']) ? $result['_id'] : '';
+            $email = isset($result['email']) ? $result['email'] : '';
 
-        if((($statusCode = $response->getStatusCode()) && ($statusCode < 200 || $this->statusCode > 399))
-           || !in_array($status, ['sent', 'queued', 'scheduled'])
-           || isset($results['reject_reason'])) {
-            $message = 'Problem sending via Mandrill' . "\n";
-            $message .= urldecode(http_build_query($results, '', "\n"));
+            $status = isset($result['status']) ? $result['status'] : 'failed';
+
+            if($failed || !in_array($status, ['sent', 'queued', 'scheduled']) || isset($results['reject_reason'])) {
+                $message = 'Problem sending via Mandrill' . "\n";
+                $message .= urldecode(http_build_query($results, '', "\n"));
+            }
+
+            if($message) {
+                if($log)
+                    $log->Success = false;
+
+                $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
+                $message .= 'Message: ' . $response->getReasonPhrase();
+                throw new \SendThis_Exception($message);
+            }
+
+            \SendThis::fire('sent', $messageId ? $messageId : $messenger->getLastMessageID(), $email, $results, $results, $log);
         }
-
-        if($message) {
-            if($log)
-                $log->Success = false;
-            
-            $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
-            $message .= 'Message: ' . $response->getReasonPhrase();
-            throw new \SendThis_Exception($message);
-        }
-
-        SendThis::fire('sent', $messageId ?: $messenger->getLastMessageID(), $email, $results, $results, $log);
 
         return true;
     }
@@ -89,7 +93,7 @@ class Mandrill extends Mail {
 
     protected function endpoint($action = '')
     {
-        return Controller::join_links($this->endpoint, $action . '.json');
+        return \Controller::join_links($this->endpoint, $action . '.json');
     }
 
     public function applyHeaders(array &$headers) {
@@ -98,12 +102,12 @@ class Mandrill extends Mail {
             unset($headers['X-SendAt']);
         }
 
-        if(array_key_exists($headers, 'X-Async')) {
+        if(array_key_exists('X-Async', $headers)) {
             $this->async = $headers['X-Async'];
             unset($headers['X-Async']);
         }
 
-        if(array_key_exists($headers, 'X-ReturnPathDomain')) {
+        if(array_key_exists('X-ReturnPathDomain', $headers)) {
             $this->returnPathDomain = $headers['X-ReturnPathDomain'];
             unset($headers['X-ReturnPathDomain']);
         }

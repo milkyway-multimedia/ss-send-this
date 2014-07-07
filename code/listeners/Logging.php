@@ -9,13 +9,15 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Logging {
-    public function up($messageId, $email, $params, $response, $log, &$headers) {
-        if (!SendThis::config()->logging) return;
+    public function up($messageId, $email, $params, $response, $log, $headers) {
+        if (!\SendThis::config()->logging) return;
 
         if($log) {
             $log->To      = $params['to'];
             $log->From    = $params['from'];
             $log->Subject = $params['subject'];
+
+            $headers = (array) $headers;
 
             $this->Cc      = isset($headers['Cc']) ? $headers['Cc'] : null;
             $this->Bcc     = isset($headers['Bcc']) ? $headers['Bcc'] : null;
@@ -55,7 +57,7 @@ class Logging {
                 $log->Attachments = count($attachments) . ' files attached: ' . "\n" . implode("\n", $attachments);
             }
 
-            if ($member = Member::currentUser())
+            if ($member = \Member::currentUser())
             {
                 $log->SentByID = $member->ID;
             }
@@ -168,7 +170,7 @@ class Logging {
     }
 
     protected function updateLogsForMessageId($messageId, $params, $bounce = null) {
-        $logs = SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'ASC');
+        $logs = \SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'ASC');
 
         if($logs->exists()) {
             foreach($logs as $log)

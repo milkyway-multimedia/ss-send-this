@@ -9,16 +9,16 @@
  */
 class Tracking {
 
-    public function up($messageId, $email, $params, $response, $log, &$headers)
+    public function up($messageId, $email, $params, $response, $log, $headers)
     {
         if (! $log)
         {
             return;
         }
 
-        if (isset($headers['X-LinkData']) && $headers['X-LinkData'])
+        if (isset($headers->{'X-LinkData'}) && $headers->{'X-LinkData'})
         {
-            $data = $headers['X-LinkData'];
+            $data = $headers->{'X-LinkData'};
 
             if (is_array($data))
             {
@@ -36,21 +36,21 @@ class Tracking {
                 }
             }
 
-            unset($headers['X-LinkData']);
+            unset($headers->{'X-LinkData'});
         }
 
-        if (! SendThis::config()->tracking)
+        if (! \SendThis::config()->tracking)
         {
             return;
         }
 
-        if (isset($headers['X-TrackLinks']) && $headers['X-TrackLinks'])
+        if (isset($headers->{'X-TrackLinks'}) && $headers->{'X-TrackLinks'})
         {
             $log->Track_Links = true;
-            unset($headers['X-TrackLinks']);
+            unset($headers->{'X-TrackLinks'});
         }
 
-        if (isset($headers['X-Links-AttachSlug']) && $headers['X-Links-AttachSlug'])
+        if (isset($headers->{'X-Links-AttachSlug'}) && $headers->{'X-Links-AttachSlug'})
         {
             $linkData = isset($linkData) ? $linkData : isset($data) ? $data : [];
 
@@ -59,29 +59,32 @@ class Tracking {
                 $log->generateHash();
             }
 
-            if ($headers['X-Links-AttachSlug'] === true || $headers['X-Links-AttachSlug'] == 1)
+            if ($headers->{'X-Links-AttachSlug'} === true || $headers->{'X-Links-AttachSlug'} == 1)
             {
                 if (! isset($linkData['utm_term']))
                 {
                     $linkData['utm_term'] = $log->Slug;
                 }
-            } elseif (! isset($linkData[$headers['X-Links-AttachSlug']]))
+            } elseif (! isset($linkData[$headers->{'X-Links-AttachSlug'}]))
             {
-                $linkData[$headers['X-Links-AttachSlug']] = $log->Slug;
+                $linkData[$headers->{'X-Links-AttachSlug'}] = $log->Slug;
             }
 
             $log->Link_Data = $linkData;
 
-            unset($headers['X-Links-AttachSlug']);
+            unset($headers->{'X-Links-AttachSlug'});
         }
     }
 
     public function sending($messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
-        if (! SendThis::config()->tracking)
+        if (! \SendThis::config()->tracking)
         {
-            if ($params['message']->ContentType == 'text/plain') {
-                $params['message']->Body = $this->trackLinks($log, $params['message']->Body);
+            if ($log && $params['message']->ContentType == 'text/html') {
+                $params['message']->Body = $this->removeTracker($log, $this->trackLinks($log, $params['message']->Body));
+
+                if($params['message']->AltBody)
+                    $params['message']->AltBody = $this->removeTracker($log, $params['message']->Body);
             }
 
             return;
@@ -109,7 +112,7 @@ class Tracking {
 
     public function opened($messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
-        if (! SendThis::config()->tracking)
+        if (! \SendThis::config()->tracking)
         {
             return;
         }
@@ -120,7 +123,7 @@ class Tracking {
             $logs[] = $log;
         } elseif ($messageId)
         {
-            $logs = SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'ASC');
+            $logs = \SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'ASC');
         }
 
         if (! count($logs))
@@ -144,15 +147,15 @@ class Tracking {
 
     public function clicked($messageId = '', $email = '', $params = [], $response = [], $link = null)
     {
-        if (! SendThis::config()->tracking || ! $link)
+        if (! \SendThis::config()->tracking || ! $link)
         {
             return;
         }
 
-        if (! Cookie::get('tracking-email-link-' . $link->Slug))
+        if (! \Cookie::get('tracking-email-link-' . $link->Slug))
         {
             $link->Visits ++;
-            Cookie::set('tracking-email-link-' . $link->Slug, true);
+            \Cookie::set('tracking-email-link-' . $link->Slug, true);
         }
 
         if (! $link->Clicked)
@@ -164,18 +167,21 @@ class Tracking {
         $link->write();
     }
 
-    protected function insertTracker($log, $content, $replace = ['{{tracker}}', '{{tracker-url}}'])
+    protected function insertTracker($log, $content)
     {
-        $url = Director::absoluteURL(str_replace('$Slug', urlencode($log->Slug), SendThis_Tracker::config()->slug));
+        $url = \Director::absoluteURL(str_replace('$Slug', urlencode($log->Slug), \SendThis_Tracker::config()->slug));
 
-        return str_replace($replace, ['<img src="' . $url . '" alt="" />', $url], $content);
+        if(stripos($content, '</body'))
+            return preg_replace("/(<\/body[^>]*>)/i", '<img src="' . $url . '" alt="" />\\1', $content);
+        else
+            return $content . '<img src="' . $url . '" alt="" />';
     }
 
-    protected function removeTracker($log, $content, $replace = ['{{tracker}}', '{{tracker-url}}'])
+    protected function removeTracker($log, $content)
     {
-        $url = Director::absoluteURL(str_replace('$Slug', urlencode($log->Slug), SendThis_Tracker::config()->slug));
+        $url = \Director::absoluteURL(str_replace('$Slug', urlencode($log->Slug), \SendThis_Tracker::config()->slug));
 
-        return str_replace(array_merge($replace, ['<img src="' . $url . '" alt="" />', $url]), '', $content);
+        return str_replace(array_merge(['<img src="' . $url . '" alt="" />', $url]), '', $content);
     }
 
     protected function trackLinks($log, $content)
@@ -235,7 +241,7 @@ class Tracking {
             return $url;
         }
 
-        return SendThis_Link::add_link_data($url, $log->LinkData);
+        return \SendThis_Link::add_link_data($url, $log->LinkData);
     }
 
     function getTrackerData($data)

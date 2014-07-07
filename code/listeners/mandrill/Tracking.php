@@ -95,21 +95,21 @@ class Tracking extends \Milkyway\SendThis\Listeners\Tracking {
             ) = $response['user_agent_parsed'];
 
             $tracked = array_merge($tracked, compact(
-                    $Mobile,
-                    $OperatingSystemCompany,
-                    $OperatingSystemCompanyLink,
-                    $OperatingSystemBrand,
-                    $OperatingSystemIcon,
-                    $OperatingSystem,
-                    $OperatingSystemLink,
-                    $Type,
-                    $ClientCompany,
-                    $ClientCompanyLink,
-                    $ClientBrand,
-                    $ClientIcon,
-                    $Client,
-                    $ClientLink,
-                    $ClientVersion
+                    'Mobile',
+                    'OperatingSystemCompany',
+                    'OperatingSystemCompanyLink',
+                    'OperatingSystemBrand',
+                    'OperatingSystemIcon',
+                    'OperatingSystem',
+                    'OperatingSystemLink',
+                    'Type',
+                    'ClientCompany',
+                    'ClientCompanyLink',
+                    'ClientBrand',
+                    'ClientIcon',
+                    'Client',
+                    'ClientLink',
+                    'ClientVersion'
                 )
             );
         }
@@ -128,14 +128,14 @@ class Tracking extends \Milkyway\SendThis\Listeners\Tracking {
                 ) = $response['location'];
 
             $tracked = array_merge($tracked, compact(
-                    $CountryCode,
-                    $Country,
-                    $Region,
-                    $City,
-                    $PostalCode,
-                    $Timezone,
-                    $Latitude,
-                    $Longitude
+                    'CountryCode',
+                    'Country',
+                    'Region',
+                    'City',
+                    'PostalCode',
+                    'Timezone',
+                    'Latitude',
+                    'Longitude'
                 )
             );
         }

@@ -7,19 +7,19 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Notifications {
-    public function up($messageId, $email, $params, $response, $log, &$headers) {
-        if ($log && isset($headers['X-NotifyOnFail']) && $headers['X-NotifyOnFail'])
+    public function up($messageId, $email, $params, $response, $log, $headers) {
+        if ($log && isset($headers->{'X-NotifyOnFail'}) && $headers->{'X-NotifyOnFail'})
         {
-            $log->Notify_Sender = $headers['X-NotifyOnFail'];
-            unset($headers['X-NotifyOnFail']);
+            $log->Notify_Sender = $headers->{'X-NotifyOnFail'};
+            unset($headers->{'X-NotifyOnFail'});
         }
     }
 
     public function hooked($messageId, $email, $params, $response) {
-        if(SendThis::config()->debugging && $email = Email::config()->admin_email) {
+        if(\SendThis::config()->debugging && $email = \Email::config()->admin_email) {
             $originalSMTP = ini_get('SMTP');
 
-            if($customSMTP = SendThis::config()->smtp_for_debugging)
+            if($customSMTP = \SendThis::config()->smtp_for_debugging)
                 ini_set('SMTP', $customSMTP);
 
             mail(
@@ -52,7 +52,7 @@ class Notifications {
 
     public function notifyByMessageId($messageId, $email = '', $response = []) {
         if($messageId) {
-            $logs = SendThis_Log::get()->filter('MessageID', $messageId);
+            $logs = \SendThis_Log::get()->filter('MessageID', $messageId);
 
             if($logs->exists()) {
                 foreach($logs as $log) {
@@ -63,20 +63,20 @@ class Notifications {
     }
 
     protected function sendNotificationToSender($log, $email, $response = [], $write = false) {
-        if ($log && ($log->Notify_Sender && ($log->From || $log->SentBy()->exists())) || SendThis::config()->notify_on_fail)
+        if ($log && ($log->Notify_Sender && ($log->From || $log->SentBy()->exists())) || \SendThis::config()->notify_on_fail)
         {
             $from = $log->Notify_Sender;
-            $notify = SendThis::config()->notify_on_fail;
+            $notify = \SendThis::config()->notify_on_fail;
 
-            if (! Email::is_valid_address($from))
+            if (! \Email::is_valid_address($from))
             {
                 $from = $log->SentBy()->exists() ? $log->SentBy()->ForEmail : $log->From;
             }
 
             if($notify) {
-                if (! Email::is_valid_address($notify))
+                if (! \Email::is_valid_address($notify))
                 {
-                    $from = Email::config()->admin_email;
+                    $from = \Email::config()->admin_email;
                 }
 
                 if(strpos($notify, '+') === false)
@@ -88,7 +88,7 @@ class Notifications {
                 }
             }
 
-            $e = Email::create(
+            $e = \Email::create(
                 $from,
                 $from,
                 _t(
