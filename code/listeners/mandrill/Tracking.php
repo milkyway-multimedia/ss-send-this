@@ -8,7 +8,7 @@
  */
 
 class Tracking extends \Milkyway\SendThis\Listeners\Tracking {
-    public function opened($messageId = '', $email = '', $params = [], $response = []) {
+    public function opened($messageId = '', $email = '', $params = [], $response = [], $log = null) {
         if (!SendThis::config()->api_tracking) return;
         $logs = null;
 
@@ -35,7 +35,7 @@ class Tracking extends \Milkyway\SendThis\Listeners\Tracking {
         }
     }
 
-    public function clicked($messageId = '', $email = '', $params = [], $response = []) {
+    public function clicked($messageId = '', $email = '', $params = [], $response = [], $link = null) {
         if (!SendThis::config()->api_tracking) return;
 
         if(isset($response['url']) && $messageId) {
@@ -110,6 +110,32 @@ class Tracking extends \Milkyway\SendThis\Listeners\Tracking {
                     $Client,
                     $ClientLink,
                     $ClientVersion
+                )
+            );
+        }
+
+        if (isset($response['location']))
+        {
+            list(
+                $CountryCode,
+                $Country,
+                $Region,
+                $City,
+                $PostalCode,
+                $Timezone,
+                $Latitude,
+                $Longitude
+                ) = $response['location'];
+
+            $tracked = array_merge($tracked, compact(
+                    $CountryCode,
+                    $Country,
+                    $Region,
+                    $City,
+                    $PostalCode,
+                    $Timezone,
+                    $Latitude,
+                    $Longitude
                 )
             );
         }

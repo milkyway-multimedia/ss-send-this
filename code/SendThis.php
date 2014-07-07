@@ -11,15 +11,31 @@
  */
 
 class SendThis extends Mailer {
+    /** @var array A map for the transports you can use with SendThis */
     private static $transports = [
         'smtp' => '\Milkyway\SendThis\Transports\SMTP',
         'ses' => '\Milkyway\SendThis\Transports\AmazonSES',
         'mandrill' => '\Milkyway\SendThis\Transports\Mandrill',
     ];
 
+    /** @var bool Whether to enabled logging for this application */
+    private static $logging = true;
+
+    /** @var bool Whether to enable api tracking for this application */
+    private static $api_tracking = true;
+
+    /** @var bool|string Only allow emails from a certain domain
+     * (you can also enter an email here to override the From Address) */
+    private static $from_same_domain_only = true;
+
+    /** @var int After how many soft bounces do we blacklist */
+    private static $blacklist_after_bounced = 2;
+
+    /** @var array These are the registered listeners for SendThis */
     protected static $listeners = [];
 
-	protected static $throw_exceptions = false;
+    /** @var bool Whether or not to throw exceptions */
+	protected static $throw_exceptions = true;
 
 	public static function get_throw_exceptions() {
 		return self::$throw_exceptions;
@@ -29,14 +45,35 @@ class SendThis extends Mailer {
 		self::$throw_exceptions = $flag;
 	}
 
+    /**
+     * Send an email immediately, with ability to provide a callback and alternate transport
+     *
+     * @param Email|array      $email
+     * @param Callable  $callback
+     * @param array $transport
+     */
     public static function now($email, $callback = null, $transport = []) {
         //@todo implement a quick send function
     }
 
-    public static function later($email, $callback = null, $transport = []) {
+    /**
+     * Push an email to a queue, with ability to provide a time, callback, alternate transport
+     *
+     * @param Email|array      $email
+     * @param string $time
+     * @param Callable  $callback
+     * @param array $transport
+     */
+    public static function later($email, $time = '', $callback = null, $transport = []) {
         //@todo implement a quick queue function
     }
 
+    /**
+     * Add a listener to a event hook(s)
+     *
+     * @param array|string $hooks
+     * @param Callable $item
+     */
     public static function listen($hooks, $item) {
         $hooks = (array) $hooks;
 
@@ -51,6 +88,11 @@ class SendThis extends Mailer {
         }
     }
 
+    /**
+     * Fire an event(s)
+     *
+     * @param array|string $hooks
+     */
     public static function fire($hooks) {
         $hooks = (array)$hooks;
 
@@ -65,9 +107,13 @@ class SendThis extends Mailer {
         }
     }
 
-    protected $transport; // The transport
-    protected $messenger; // The PHP Mailer instance
+    /** @var \Milkyway\SendThis\Contracts\Transport The mail transport */
+    protected $transport;
 
+    /** @var PHPMailer  The PHP Mailer instance */
+    protected $messenger;
+
+    /** @var bool Whether there is no to email in current message */
     protected $noTo = false;
 
     /**
@@ -84,6 +130,13 @@ class SendThis extends Mailer {
 		}
 	}
 
+    /**
+     * Get an administrator or default email
+     *
+     * @param string $prepend
+     *
+     * @return string
+     */
     public static function admin_email($prepend = '') {
         if($email = Config::inst()->get('Email', 'admin_email'))
             return $prepend ? $prepend . '+' . $email : $email;
@@ -93,6 +146,13 @@ class SendThis extends Mailer {
         return $name . '@' . trim(str_replace(array('http://', 'https://', 'www.'), '', Director::protocolAndHost()), ' /');
     }
 
+    /**
+     * Get message id from headers
+     *
+     * @param $headers
+     *
+     * @return mixed
+     */
     public static function message_id_from_headers($headers) {
         if(isset($headers['Message-ID']))
             return $headers['Message-ID'];
@@ -184,7 +244,7 @@ class SendThis extends Mailer {
 		}
 
 		// set the to
-		if(!$this->addEmail($to, 'AddAddress', $email, $ignoreValid))
+		if(!$this->addEmail($to, 'addAddress', $email, $ignoreValid))
 			$this->noTo = true;
 
 		list($doFrom, $doFromName) = $this->split_email($from);
@@ -214,7 +274,7 @@ class SendThis extends Mailer {
 					if(!$realFromName) $doFromName = singleton('LeftAndMain')->ApplicationName;
 				}
 
-				$email->AddReplyTo($realFrom, $realFromName);
+				$email->addReplyTo($realFrom, $realFromName);
 			}
 		}
 
@@ -232,11 +292,11 @@ class SendThis extends Mailer {
 		if (is_array($attachedFiles)) {
 			foreach($attachedFiles as $file) {
 				if (isset($file['tmp_name']) && isset($file['name']))
-					$email->AddAttachment($file['tmp_name'], $file['name']);
+					$email->addAttachment($file['tmp_name'], $file['name']);
 				elseif (isset($file['contents']))
-					$email->AddStringAttachment($file['contents'], $file['filename']);
+					$email->addStringAttachment($file['contents'], $file['filename']);
 				else
-					$email->AddAttachment($file);
+					$email->addAttachment($file);
 			}
 		}
 

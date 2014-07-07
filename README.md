@@ -76,7 +76,6 @@ The following options are available for your YAML config.
       logging: true
       tracking: false
       api_tracking: true (this is slightly different to the above, in that it only uses tracking on the transport rather than CMS based tracking)
-      allow_blacklist: true
       from_same_domain_only: true
       notify_on_fail: false
       blacklist_after_bounced: 2
