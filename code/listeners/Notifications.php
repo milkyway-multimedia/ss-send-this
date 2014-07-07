@@ -10,19 +10,27 @@ class Notifications {
     public function up($messageId, $email, $params, $response, $log, &$headers) {
         if ($log && isset($headers['X-NotifyOnFail']) && $headers['X-NotifyOnFail'])
         {
-            $this->Notify_Sender = $headers['X-NotifyOnFail'];
+            $log->Notify_Sender = $headers['X-NotifyOnFail'];
             unset($headers['X-NotifyOnFail']);
         }
     }
 
     public function hooked($messageId, $email, $params, $response) {
         if(SendThis::config()->debugging && $email = Email::config()->admin_email) {
+            $originalSMTP = ini_get('SMTP');
+
+            if($customSMTP = SendThis::config()->smtp_for_debugging)
+                ini_set('SMTP', $customSMTP);
+
             mail(
                 $email,
                 isset($params['subject']) ?: 'Subscribed to web hook',
                 isset($params['message']) ?: 'Subscribed to web hook',
                 "Content-type: text/html\nFrom: " . $email
             );
+
+            if($customSMTP)
+                ini_set('SMTP', $originalSMTP);
         }
     }
 
@@ -55,7 +63,7 @@ class Notifications {
     }
 
     protected function sendNotificationToSender($log, $email, $response = [], $write = false) {
-        if (($log->Notify_Sender && ($log->From || $log->SentBy()->exists())) || SendThis::config()->notify_on_fail)
+        if ($log && ($log->Notify_Sender && ($log->From || $log->SentBy()->exists())) || SendThis::config()->notify_on_fail)
         {
             $from = $log->Notify_Sender;
             $notify = SendThis::config()->notify_on_fail;
@@ -111,11 +119,11 @@ class Notifications {
             $e->addCustomHeader('X-Priority', 1);
 
             $e->send();
-        }
 
-        if ($write)
-        {
-            $this->write();
+            if ($write)
+            {
+                $log->write();
+            }
         }
     }
 } 

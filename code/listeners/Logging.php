@@ -137,6 +137,22 @@ class Logging {
         $this->updateBadEmail($messageId, $email, $params);
     }
 
+    public function whitelisted($messageId = '', $email = '', $params = [], $response = []) {
+        if(!$email) return;
+
+        if(!isset($params['message']))
+            $params['message'] = 'The user of this email has requested to be whitelisted for this application';
+
+        $blocked = MWMMailer_Blacklist::get()->filter('Email', $email);
+
+        if($blocked->exists()) {
+            foreach($blocked as $block) {
+                $block->delete();
+                $block->destroy();
+            }
+        }
+    }
+
     protected function updateBadEmail($messageId = '', $email = '', $params = array()) {
         if($email) {
             $message = isset($params['message']) ? $params['message'] : 'Unknown';

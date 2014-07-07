@@ -186,13 +186,11 @@ class SendThis_Controller extends Controller {
 		$fields = $form->Data;
 
 		if(!SendThis_Blacklist::get()->filter('Email', $fields['Email'])->exists()) {
-			$blocked = SendThis_Blacklist::create($fields);
-			$blocked->Message = _t('SendThis.UNSUBSCRIBE_BY_USER', 'Unsubscribe by user');
-			$blocked->write();
+            SendThis::fire('blacklisted', '', $fields['Email'], ['message' => _t('SendThis.BLACKLIST_BY_USER', 'Unsubscribe by user'), 'internal' => true], $fields);
 
             $response = [
                 'message' => _t(
-                    'SendThis.UNSUBSCRIBED',
+                    'SendThis.BLACKLIST',
                     'The email {email} has successfully been unsubscribed and will no longer receive emails originating from this domain',
                     [
                         'email' => $fields['Email'],
@@ -207,7 +205,7 @@ class SendThis_Controller extends Controller {
 		else {
             return $this->respond([
                     'message' => _t(
-                        'SendThis.ALREADY_UNSUBSCRIBED',
+                        'SendThis.ALREADY_BLACKLISTED',
                         '{email} is already unsubscribed from this domain. <a href="{unblock}">Would you like to allow emails from this domain?</a>',
                         [
                             'email' => $fields['Email'],
@@ -221,14 +219,8 @@ class SendThis_Controller extends Controller {
 
 	function doUnblock($data, $form, $request) {
 		$fields = $form->Data;
-		$blocked = MWMMailer_Blacklist::get()->filter('Email', $fields['Email']);
 
-		if($blocked->exists()) {
-			foreach($blocked as $block) {
-				$block->delete();
-				$block->destroy();
-			}
-		}
+        SendThis::fire('whitelisted', '', $fields['Email'], ['message' => _t('SendThis.WHITELIST_BY_USER', 'User has requested to be whitelisted'), 'internal' => true], $fields);
 
         $response = [
             'message' => _t(
