@@ -34,6 +34,9 @@ class SendThis extends Mailer {
     /** @var array These are the registered listeners for SendThis */
     protected static $listeners = [];
 
+    /** @var array These are the registered listeners for SendThis that will be only called once and then removed (callbacks if you will) */
+    protected static $callbacks = [];
+
     /** @var bool Whether or not to throw exceptions */
 	protected static $throw_exceptions = true;
 
@@ -54,6 +57,8 @@ class SendThis extends Mailer {
      */
     public static function now($email, $callback = null, $transport = []) {
         //@todo implement a quick send function
+        if($callback)
+            static::listen('sent', $callback);
     }
 
     /**
@@ -66,6 +71,8 @@ class SendThis extends Mailer {
      */
     public static function later($email, $time = '', $callback = null, $transport = []) {
         //@todo implement a quick queue function
+        if($callback)
+            static::listen(['sent', 'delayed'], $callback);
     }
 
     /**
@@ -73,20 +80,28 @@ class SendThis extends Mailer {
      *
      * @param array|string $hooks
      * @param Callable $item
+     * @param bool $once
      */
-    public static function listen($hooks, $item) {
+    public static function listen($hooks, $item, $once = false) {
         $hooks = (array) $hooks;
 
         foreach($hooks as $hook) {
-            if(!isset(self::$listeners[$hook]))
-                self::$listeners[$hook] = [];
+            if($once) {
+                if(!isset(static::$callbacks[$hook]))
+                    static::$callbacks[$hook] = [];
+            }
+            elseif(!isset(static::$listeners[$hook]))
+                static::$listeners[$hook] = [];
 
             if(!is_callable($item))
                 $listener = [$item, $hook];
             else
                 $listener = $item;
 
-            self::$listeners[$hook][] = $listener;
+            if($once)
+                static::$callbacks[$hook][] = $listener;
+            else
+                static::$listeners[$hook][] = $listener;
         }
     }
 
@@ -99,11 +114,19 @@ class SendThis extends Mailer {
         $hooks = (array)$hooks;
 
         foreach($hooks as $hook) {
-            if(isset(self::$listeners[$hook])) {
+            if(isset(static::$listeners[$hook])) {
                 $args = func_get_args();
                 array_shift($args);
 
-                foreach(self::$listeners[$hook] as $listener)
+                foreach(static::$listeners[$hook] as $listener)
+                    call_user_func_array($listener, $args);
+            }
+
+            if(isset(static::$callbacks[$hook])) {
+                $args = func_get_args();
+                array_shift($args);
+
+                foreach(static::$callbacks[$hook] as $listener)
                     call_user_func_array($listener, $args);
             }
         }
@@ -436,6 +459,7 @@ class SendThis extends Mailer {
         }
 
         static::fire('down', $messageId, $to, $params, $params, $log);
+        static::$callbacks = [];
 
         $this->resetMessenger();
 

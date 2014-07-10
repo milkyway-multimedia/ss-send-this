@@ -59,7 +59,7 @@ class AmazonSES extends PHP {
 
         $results = $response->xml();
 
-        if((($statusCode = $response->getStatusCode()) && ($statusCode < 200 || $this->statusCode > 399))) {
+        if((($statusCode = $response->getStatusCode()) && ($statusCode < 200 || $statusCode > 399))) {
             if($log)
                 $log->MessageID = $results->RequestId;
 

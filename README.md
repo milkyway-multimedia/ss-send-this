@@ -48,6 +48,16 @@ You can use these web hooks to sync your application to the transactional email 
 
 Events pass four arguments when called: string $messageId, string|array $email, array $params, array $response, $log = null (log is only passed for internal events. For web hooks, you can find the log by message id)
 
+You can subscribe to an event hook by calling
+
+```
+
+    SendThis::listen(['up', 'sent'], function($messageId = '', $email = '', $params = [], $response = [], $log = '', $headers = null) {});
+
+```
+
+The second parameter is a callable, so it can be an anonymous function, a callable array, or if you pass an object, it will assume the web hook is mapped to a method with the same name on the object (see _config.php for examples)
+
 ### Transports
 By default, this module will use PHP Mail (as per the normal Silverstripe mailer, but implementing PHPMailer). To use the other setups, please read on.
 
