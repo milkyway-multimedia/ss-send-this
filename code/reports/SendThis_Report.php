@@ -48,20 +48,34 @@ class SendThis_Report extends SS_Report {
 	 * @return array
 	 */
 	public function columns() {
-		return array(
-			'Success' => array(
+		return [
+            'To' => [
+                'title' => _t('SendThis_Log.TO', 'To'),
+            ],
+            'Subject' => [
+                'title' => _t('SendThis_Log.SUBJECT', 'Subject'),
+            ],
+            'Sent' => [
+                'title' => _t('SendThis_Log.SENT', 'Sent'),
+            ],
+			'Success' => [
+                'title' => _t('SendThis_Log.SUCCESS', 'Success'),
 				'formatting' =>
                     function($value, $record) {
                         return $value ? '<span class="ui-button-icon-primary ui-icon btn-icon-accept boolean-yes"></span>' : '<span class="ui-button-icon-primary ui-icon btn-icon-decline boolean-no"></span>';
                     }
-			),
-			'Track_Open' => array(
+			],
+			'Opened' => [
+                'title' => _t('SendThis_Log.OPENED', 'Opened'),
                 'formatting' =>
                     function($value, $record) {
-                        return $value && $value != '0000-00-00 00:00:00' ? $value : '<span class="ui-button-icon-primary ui-icon btn-icon-decline"></span>';
+                        return $value && $value != '0000-00-00 00:00:00' ? $record->obj('Opened')->Nice() : '<span class="ui-button-icon-primary ui-icon btn-icon-decline"></span>';
                     }
-			),
-		);
+			],
+            'Tracker_ForTemplate' => [
+                'title' => _t('SendThis_Log.DETAILS', 'Details'),
+            ],
+		];
 	}
 
 	public function canView($member = null) {
@@ -87,6 +101,7 @@ class SendThis_Report_Blacklisted extends SS_Report {
 	public function columns() {
 		return array(
 			'Message' => array(
+                'casting' => 'HTMLText',
                 'formatting' =>
                     function($value, $record) {
                         return '<pre>' . print_r($value, true) . '</pre>';

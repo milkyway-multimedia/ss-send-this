@@ -59,11 +59,11 @@ class SendThis_Log extends DataObject {
     private static $singular_name = 'Email Log';
 
     private static $summary_fields = array(
-        'Subject',
         'To',
+        'Subject',
         'Sent',
         'Success',
-        'Track_Open'          => 'Opened',
+        'Opened'          => 'Opened',
         'Tracker_ForTemplate' => 'Details',
     );
 

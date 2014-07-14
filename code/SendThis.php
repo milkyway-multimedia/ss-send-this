@@ -187,6 +187,8 @@ class SendThis extends Mailer {
 
         if(isset($headers['X-MilkywayMessageID']))
             return $headers['X-MilkywayMessageID'];
+
+        return '';
     }
 
     public function __construct() {
@@ -214,7 +216,7 @@ class SendThis extends Mailer {
         $available = $this->config()->transports;
         $transport = $this->config()->transport;
 
-        if(isset($available[$transport]))
+        if($transport && isset($available[$transport]))
             $this->transport = Object::create($available[$transport], $this->messenger);
         else
             $this->transport = Object::create('\Milkyway\SendThis\Transports\SendThis_Default', $this->messenger);
@@ -275,7 +277,7 @@ class SendThis extends Mailer {
 		list($doFrom, $doFromName) = $this->split_email($from);
 
 		if($sameDomain = static::config()->from_same_domain_only) {
-			$base = '@' . MWMDirector::baseWebsiteURL();
+			$base = '@' . \Milkyway\Director::baseWebsiteURL();
 
 			if(!is_bool($sameDomain) || !$doFrom || !(substr($doFrom, -strlen($base)) === $base)) {
 				$realFrom = $doFrom;
@@ -367,15 +369,6 @@ class SendThis extends Mailer {
 				unset($headers['X-Priority']);
 			}
 		}
-
-        if(defined('BOUNCE_EMAIL')) {
-            $bounceAddress = BOUNCE_EMAIL;
-
-            if($doFrom)
-                $bounceAddress = "$doFrom <$bounceAddress>";
-
-            $email->ReturnPath = $bounceAddress;
-        }
 
 		// Email has higher chance of being received if there is a too email sent...
 		if($this->noTo && $to = Email::config()->default_to_email) {
