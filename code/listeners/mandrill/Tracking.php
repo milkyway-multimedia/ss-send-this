@@ -1,4 +1,4 @@
-<?php namespace Milkyway\SendThis\Listeners\Mandrill;
+<?php namespace Milkyway\SS\SendThis\Listeners\Mandrill;
 /**
  * Milkyway Multimedia
  * Tracking.php
@@ -7,7 +7,7 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 
-class Tracking extends \Milkyway\SendThis\Listeners\Tracking {
+class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
     public function opened($messageId = '', $email = '', $params = [], $response = [], $log = null) {
         if (!SendThis::config()->api_tracking) return;
         $logs = null;

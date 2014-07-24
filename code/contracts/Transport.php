@@ -1,4 +1,4 @@
-<?php namespace Milkyway\SendThis\Contracts;
+<?php namespace Milkyway\SS\SendThis\Contracts;
 /**
  * Milkyway Multimedia
  * Transport.php

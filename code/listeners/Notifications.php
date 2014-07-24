@@ -1,4 +1,4 @@
-<?php namespace Milkyway\SendThis\Listeners;
+<?php namespace Milkyway\SS\SendThis\Listeners;
 /**
  * Milkyway Multimedia
  * Notifications.php

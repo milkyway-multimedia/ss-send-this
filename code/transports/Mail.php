@@ -1,6 +1,6 @@
-<?php namespace Milkyway\SendThis\Transports;
+<?php namespace Milkyway\SS\SendThis\Transports;
 
-use Milkyway\SendThis\Contracts\Transport;
+use Milkyway\SS\SendThis\Contracts\Transport;
 
 /**
  * Milkyway Multimedia

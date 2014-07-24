@@ -1,4 +1,4 @@
-<?php namespace Milkyway\SendThis\WebHookHandlers;
+<?php namespace Milkyway\SS\SendThis\WebHookHandlers;
 
 /**
  * Milkyway Multimedia

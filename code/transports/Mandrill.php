@@ -1,4 +1,4 @@
-<?php namespace Milkyway\SendThis\Transports;
+<?php namespace Milkyway\SS\SendThis\Transports;
 
 /**
  * Milkyway Multimedia

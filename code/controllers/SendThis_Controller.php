@@ -14,8 +14,8 @@
 class SendThis_Controller extends Controller {
     // registered web hook handlers
     private static $web_hooks = [
-        'm' => '\Milkyway\SendThis\WebHookHandlers\Mandrill',
-        'a' => '\Milkyway\SendThis\WebHookHandlers\AmazonSES',
+        'm' => '\Milkyway\SS\SendThis\WebHookHandlers\Mandrill',
+        'a' => '\Milkyway\SS\SendThis\WebHookHandlers\AmazonSES',
     ];
 
 	private static $allowed_actions = [

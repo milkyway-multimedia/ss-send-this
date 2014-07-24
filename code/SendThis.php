@@ -13,9 +13,9 @@
 class SendThis extends Mailer {
     /** @var array A map for the transports you can use with SendThis */
     private static $transports = [
-        'smtp' => '\Milkyway\SendThis\Transports\SMTP',
-        'ses' => '\Milkyway\SendThis\Transports\AmazonSES',
-        'mandrill' => '\Milkyway\SendThis\Transports\Mandrill',
+        'smtp' => '\Milkyway\SS\SendThis\Transports\SMTP',
+        'ses' => '\Milkyway\SS\SendThis\Transports\AmazonSES',
+        'mandrill' => '\Milkyway\SS\SendThis\Transports\Mandrill',
     ];
 
     /** @var bool Whether to enabled logging for this application */
