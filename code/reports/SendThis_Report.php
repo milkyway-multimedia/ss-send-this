@@ -100,6 +100,9 @@ class SendThis_Report_Blacklisted extends SS_Report {
 	 */
 	public function columns() {
 		return array(
+            'Email' => [
+                'title' => _t('SendThis_Log.EMAIL', 'Email'),
+            ],
 			'Message' => array(
                 'casting' => 'HTMLText',
                 'formatting' =>
@@ -107,6 +110,13 @@ class SendThis_Report_Blacklisted extends SS_Report {
                         return '<pre>' . print_r($value, true) . '</pre>';
                     }
 			),
+            'Valid' => [
+                'casting' => 'HTMLText',
+                'formatting' =>
+                    function($value, $record) {
+                        return $value ? '<span class="ui-button-icon-primary ui-icon btn-icon-accept boolean-yes"></span>' : '<span class="ui-button-icon-primary ui-icon btn-icon-decline boolean-no"></span>';
+                    }
+            ],
 		);
 	}
 
@@ -139,6 +149,9 @@ class SendThis_Report_Bounced extends SS_Report {
 	 */
 	public function columns() {
         return array(
+            'Email' => [
+                'title' => _t('SendThis_Log.EMAIL', 'Email'),
+            ],
             'Message' => array(
                 'formatting' =>
                     function($value, $record) {

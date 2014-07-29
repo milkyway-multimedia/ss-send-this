@@ -136,6 +136,8 @@ class Logging {
         if(!isset($params['message']))
             $params['message'] = 'The user of this email has requested to be blacklisted from this application';
 
+        $params['valid_email'] = true;
+
         $this->updateBadEmail($messageId, $email, $params);
     }
 
@@ -145,7 +147,7 @@ class Logging {
         if(!isset($params['message']))
             $params['message'] = 'The user of this email has requested to be whitelisted for this application';
 
-        $blocked = MWMMailer_Blacklist::get()->filter('Email', $email);
+        $blocked = \SendThis_Blacklist::get()->filter(['Email' => $email, 'Valid' => true]);
 
         if($blocked->exists()) {
             foreach($blocked as $block) {
@@ -158,15 +160,15 @@ class Logging {
     protected function updateBadEmail($messageId = '', $email = '', $params = array()) {
         if($email) {
             $message = isset($params['message']) ? $params['message'] : 'Unknown';
-            $this->blacklistEmail($email, $message);
+            $this->blacklistEmail($email, $message, isset($params['valid_email']));
         }
 
         if($messageId)
             $this->updateLogsForMessageId($messageId, $params);
     }
 
-    protected function blacklistEmail($email, $message = '') {
-        \SendThis_Blacklist::log_invalid($email, $message);
+    protected function blacklistEmail($email, $message = '', $valid = false) {
+        \SendThis_Blacklist::log_invalid($email, $message, $valid);
     }
 
     protected function updateLogsForMessageId($messageId, $params, $bounce = null) {

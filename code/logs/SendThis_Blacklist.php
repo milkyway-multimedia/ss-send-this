@@ -22,6 +22,12 @@ class SendThis_Blacklist extends DataObject {
 
     private static $singular_name = 'Blacklisted Email';
 
+    private static $summary_fields = array(
+        'Email',
+        'Message',
+        'Valid',
+    );
+
     /**
      * Check if email is blacklisted
      *
@@ -50,40 +56,44 @@ class SendThis_Blacklist extends DataObject {
         return static::get()->filter(array('Email' => $email, 'Valid' => 0))->exists();
     }
 
-    public static function log_invalid($email, $message = '') {
+    public static function log_invalid($email, $message = '', $valid = false) {
         $blacklist = static::create();
         $blacklist->Email = $email;
         $blacklist->Message = $message;
-        $blacklist->Valid = false;
+        $blacklist->Valid = $valid;
         $blacklist->write();
 
-        $emails = SendThis_Log::get()->filter('Success', 1)->filterAny(array(
-                'To' => array(
-                    $email,
-                    '<' . $email . ':PartialMatch',
-                    $email . ',:PartialMatch',
-                ),
-                'From' => array(
-                    $email,
-                    '<' . $email . ':PartialMatch',
-                    $email . ',:PartialMatch',
-                ),
-                'Cc' => array(
-                    $email,
-                    '<' . $email . ':PartialMatch',
-                    $email . ',:PartialMatch',
-                ),
-                'Bcc' => array(
-                    $email,
-                    '<' . $email . ':PartialMatch',
-                    $email . ',:PartialMatch',
-                ),
-            ));
+        if(!$valid) {
+            $emails = SendThis_Log::get()->filter('Success', 1)->filterAny(
+                array(
+                    'To'   => array(
+                        $email,
+                        '<' . $email . ':PartialMatch',
+                        $email . ',:PartialMatch',
+                    ),
+                    'From' => array(
+                        $email,
+                        '<' . $email . ':PartialMatch',
+                        $email . ',:PartialMatch',
+                    ),
+                    'Cc'   => array(
+                        $email,
+                        '<' . $email . ':PartialMatch',
+                        $email . ',:PartialMatch',
+                    ),
+                    'Bcc'  => array(
+                        $email,
+                        '<' . $email . ':PartialMatch',
+                        $email . ',:PartialMatch',
+                    ),
+                )
+            );
 
-        if($emails->exists()) {
-            foreach($emails as $email) {
-                $email->Success = false;
-                $email->write();
+            if ($emails->exists()) {
+                foreach ($emails as $email) {
+                    $email->Success = false;
+                    $email->write();
+                }
             }
         }
     }

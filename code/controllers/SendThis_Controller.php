@@ -209,7 +209,7 @@ class SendThis_Controller extends Controller {
                         '{email} is already unsubscribed from this domain. <a href="{unblock}">Would you like to allow emails from this domain?</a>',
                         [
                             'email' => $fields['Email'],
-                            'unblock' => $this->Link('unblock/' . urlencode($fields['Email']))
+                            'unblock' => $this->Link('unblock/' . str_replace(['.', '-'], ['%2E', '%2D'], rawurlencode($fields['Email'])))
                         ]
                     )
                 ]
