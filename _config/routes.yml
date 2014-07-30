@@ -1,5 +1,5 @@
 ---
-Name: mwm-routes
+Name: sendthis-routes
 After:
   - 'framework/*'
   - 'cms/*'

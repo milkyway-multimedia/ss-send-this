@@ -52,7 +52,7 @@ You can subscribe to an event hook by calling
 
 ```
 
-    SendThis::listen(['up', 'sent'], function($messageId = '', $email = '', $params = [], $response = [], $log = '', $headers = null) {});
+    SendThis::listen(['sent'], function($messageId = '', $email = '', $params = [], $response = [], $log = '', $headers = null) {});
 
 ```
 

@@ -58,7 +58,7 @@ class SendThis extends Mailer {
     public static function now($email, $callback = null, $transport = []) {
         //@todo implement a quick send function
         if($callback)
-            static::listen('sent', $callback);
+            static::listen('sent', $callback, true);
     }
 
     /**
@@ -72,7 +72,39 @@ class SendThis extends Mailer {
     public static function later($email, $time = '', $callback = null, $transport = []) {
         //@todo implement a quick queue function
         if($callback)
-            static::listen(['sent', 'delayed'], $callback);
+            static::listen(['sent'], $callback, true);
+    }
+
+    public static function boot() {
+        if(static::config()->disable_default_listeners)
+            return;
+
+        $listeners = (array) static::config()->listeners;
+
+        if(count($listeners)) {
+            foreach($listeners as $listener => $options) {
+                $once = false;
+
+                if(is_array($options)) {
+                    $hooks = isset($options['events']) ? $options['events'] : user_error('The listener: ' . $listener . ' requires an events key to establish which events this listener will hook into');
+                    $once = isset($options['first_time_only']);
+
+                    if(isset($options['inject']))
+                        $listener = $options['inject'];
+                }
+                else
+                    $hooks = $options;
+
+                if(is_array($listener)) {
+                    $injectListener = array_shift($listener);
+                    $listener = [Injector::inst()->create($injectListener)] + $listener;
+                }
+                else
+                    $listener = Injector::inst()->create($listener);
+
+                static::listen($hooks, $listener, $once);
+            }
+        }
     }
 
     /**
@@ -80,7 +112,7 @@ class SendThis extends Mailer {
      *
      * @param array|string $hooks
      * @param Callable $item
-     * @param bool $once
+     * @param bool $once Only call the event once (act like a callback)
      */
     public static function listen($hooks, $item, $once = false) {
         $hooks = (array) $hooks;
@@ -128,11 +160,13 @@ class SendThis extends Mailer {
 
                 foreach(static::$callbacks[$hook] as $listener)
                     call_user_func_array($listener, $args);
+
+                static::$callbacks[$hook] = [];
             }
         }
     }
 
-    /** @var \Milkyway\SendThis\Contracts\Transport The mail transport */
+    /** @var \Milkyway\SS\SendThis\Contracts\Transport The mail transport */
     protected $transport;
 
     /** @var PHPMailer  The PHP Mailer instance */
