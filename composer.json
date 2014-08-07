@@ -24,7 +24,7 @@
 	"repositories"     : [
 		{
 			"type": "vcs",
-			"url" : "https://github.com/milkyway-multimedia/ss-hashable"
+			"url" : "https://github.com/milkyway-multimedia/silverstripe-hashable"
 		},
 		{
 			"type": "vcs",
