@@ -131,5 +131,9 @@ class Mandrill extends Mail {
 
         if(\SendThis::config()->sub_account)
             $headers['X-MC-Subaccount'] = \SendThis::config()->sub_account;
+        elseif(isset($_ENV['mandrill_sub_account']))
+            $headers['X-MC-Subaccount'] = $_ENV['mandrill_sub_account'];
+        elseif($sub = getenv('mandrill_sub_account'))
+            $headers['X-MC-Subaccount'] = $sub;
     }
 }
