@@ -14,17 +14,17 @@
 		}
 	],
 	"require"          : {
-		"silverstripe/framework"                   : "~3.1",
-		"phpmailer/phpmailer"                      : "~5.2",
-		"guzzlehttp/guzzle"                        : "~4",
-		"tijsverkoyen/css-to-inline-styles"        : "dev-master",
-		"milkyway-multimedia/silverstripe-hashable": "dev-master",
-		"milkyway-multimedia/silverstripe-mwm"     : "dev-master"
+		"silverstripe/framework"              : "~3.1",
+		"phpmailer/phpmailer"                 : "~5.2",
+		"guzzlehttp/guzzle"                   : "~4",
+		"tijsverkoyen/css-to-inline-styles"   : "dev-master",
+		"milkyway-multimedia/ss-hashable"     : "dev-master",
+		"milkyway-multimedia/silverstripe-mwm": "dev-master"
 	},
 	"repositories"     : [
 		{
 			"type": "vcs",
-			"url" : "https://github.com/milkyway-multimedia/silverstripe-hashable"
+			"url" : "https://github.com/milkyway-multimedia/ss-hashable"
 		},
 		{
 			"type": "vcs",
