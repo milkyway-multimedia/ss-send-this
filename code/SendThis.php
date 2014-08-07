@@ -311,7 +311,7 @@ class SendThis extends Mailer {
 		list($doFrom, $doFromName) = $this->split_email($from);
 
 		if($sameDomain = static::config()->from_same_domain_only) {
-			$base = '@' . \Milkyway\Director::baseWebsiteURL();
+			$base = '@' . \Milkyway\SS\Director::baseWebsiteURL();
 
 			if(!is_bool($sameDomain) || !$doFrom || !(substr($doFrom, -strlen($base)) === $base)) {
 				$realFrom = $doFrom;

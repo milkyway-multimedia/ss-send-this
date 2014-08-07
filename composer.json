@@ -1,26 +1,41 @@
 {
-    "name"             : "milkyway-multimedia/silverstripe-send-this",
-    "description"      : "Another mailer for Silverstripe...",
-    "type"             : "silverstripe-module",
-    "keywords"         : ["silverstripe", "email"],
-    "license"          : "MIT",
-    "authors"          : [
-        {
-            "name" : "Mellisa Hankins",
-            "email": "mell@milkywaymultimedia.com.au"
-        }
-    ],
-    "require"          : {
-        "silverstripe/framework"           : "~3.1",
-        "phpmailer/phpmailer"              : "~5.2",
-        "guzzlehttp/guzzle"                : "~4",
-        "tijsverkoyen/css-to-inline-styles": "dev-master"
-    },
-    "config"           : {
-        "process-timeout": 600
-    },
-    "minimum-stability": "dev",
-    "extra"            : {
-        "installer-name": "send-this"
-    }
+	"name"             : "milkyway-multimedia/silverstripe-send-this",
+	"description"      : "Another mailer for Silverstripe...",
+	"type"             : "silverstripe-module",
+	"keywords"         : [
+		"silverstripe",
+		"email"
+	],
+	"license"          : "MIT",
+	"authors"          : [
+		{
+			"name" : "Mellisa Hankins",
+			"email": "mell@milkywaymultimedia.com.au"
+		}
+	],
+	"require"          : {
+		"silverstripe/framework"                   : "~3.1",
+		"phpmailer/phpmailer"                      : "~5.2",
+		"guzzlehttp/guzzle"                        : "~4",
+		"tijsverkoyen/css-to-inline-styles"        : "dev-master",
+		"milkyway-multimedia/silverstripe-hashable": "dev-master",
+		"milkyway-multimedia/silverstripe-mwm"     : "dev-master"
+	},
+	"repositories"     : [
+		{
+			"type": "vcs",
+			"url" : "https://github.com/milkyway-multimedia/silverstripe-hashable"
+		},
+		{
+			"type": "vcs",
+			"url" : "https://github.com/milkyway-multimedia/silverstripe-mwm"
+		}
+	],
+	"config"           : {
+		"process-timeout": 600
+	},
+	"minimum-stability": "dev",
+	"extra"            : {
+		"installer-name": "send-this"
+	}
 }
