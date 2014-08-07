@@ -253,7 +253,7 @@ class SendThis extends Mailer {
         if($transport && isset($available[$transport]))
             $this->transport = Object::create($available[$transport], $this->messenger);
         else
-            $this->transport = Object::create('\Milkyway\SendThis\Transports\Mail', $this->messenger);
+            $this->transport = Object::create('\Milkyway\SS\SendThis\Transports\Mail', $this->messenger);
 
         return $this->transport;
     }
