@@ -1,5 +1,5 @@
 {
-	"name"             : "milkyway-multimedia/silverstripe-send-this",
+	"name"             : "milkyway-multimedia/ss-send-this",
 	"description"      : "Another mailer for Silverstripe...",
 	"type"             : "silverstripe-module",
 	"keywords"         : [
@@ -19,16 +19,16 @@
 		"guzzlehttp/guzzle"                   : "~4",
 		"tijsverkoyen/css-to-inline-styles"   : "dev-master",
 		"milkyway-multimedia/ss-hashable"     : "dev-master",
-		"milkyway-multimedia/silverstripe-mwm": "dev-master"
+		"milkyway-multimedia/ss-mwm": "dev-master"
 	},
 	"repositories"     : [
 		{
 			"type": "vcs",
-			"url" : "https://github.com/milkyway-multimedia/silverstripe-hashable"
+			"url" : "https://github.com/milkyway-multimedia/ss-hashable"
 		},
 		{
 			"type": "vcs",
-			"url" : "https://github.com/milkyway-multimedia/silverstripe-mwm"
+			"url" : "https://github.com/milkyway-multimedia/ss-mwm"
 		}
 	],
 	"config"           : {
