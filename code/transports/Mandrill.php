@@ -27,7 +27,12 @@ class Mandrill extends Mail {
             if(!$messenger->PreSend())
                 return false;
 
+            $userAgent = getenv('sendthis_user_agent') ?: isset($_ENV['sendthis_user_agent']) ? $_ENV['sendthis_user_agent'] : str_replace(' ', '', singleton('LeftAndMain')->ApplicationName) . '~Mandrill';
+
             $response = $this->http()->post($this->endpoint('messages/send-raw'), [
+                    'headers' => [
+                        'User-Agent' => $userAgent,
+                    ],
                     'body' => [
                         'key' => $key,
                         'raw_message' => $messenger->GetSentMIMEMessage(),
@@ -84,7 +89,7 @@ class Mandrill extends Mail {
     /**
      * Get a new HTTP client instance.
      *
-     * @return \Guzzle\Http\Client
+     * @return \GuzzleHttp\Client
      */
     protected function http()
     {

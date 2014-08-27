@@ -7,7 +7,7 @@
  * @package milkyway-multimedia/silverstripe-send-this
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
-class AmazonSES extends PHP {
+class AmazonSES extends Mail {
     protected $endpoint = 'https://email.{location}.amazonaws.com';
     protected $location = 'us-east-1';
 
@@ -29,13 +29,15 @@ class AmazonSES extends PHP {
 
             $date = date('r');
             $message = $messenger->GetSentMIMEMessage();
+            $userAgent = getenv('sendthis_user_agent') ?: isset($_ENV['sendthis_user_agent']) ? $_ENV['sendthis_user_agent'] : str_replace(' ', '', singleton('LeftAndMain')->ApplicationName) . '~AmazonSES';
 
             $response = $this->http()->post($this->endpoint(), array(
                     'headers' => array(
-                        'Date: ' . $date,
-                        'Host: ' . str_replace(array('http://', 'https://'), '', $this->endpoint),
-                        'Content-Type: application/x-www-form-urlencoded',
-                        'X-Amzn-Authorization: AWS3-HTTPS AWSAccessKeyId=' . urlencode($key) . ',Algorithm=HmacSHA256,Signature=' . base64_encode(hash_hmac('sha256', $date, $secret, true)),
+                        'User-Agent' => $userAgent,
+                        'Date' => $date,
+                        'Host' => str_replace(array('http://', 'https://'), '', $this->endpoint),
+                        'Content-Type' => 'application/x-www-form-urlencoded',
+                        'X-Amzn-Authorization' => 'AWS3-HTTPS AWSAccessKeyId=' . urlencode($key) . ',Algorithm=HmacSHA256,Signature=' . base64_encode(hash_hmac('sha256', $date, $secret, true)),
                     ),
                     'body' => array(
                         'Action' => 'SendRawEmail',
@@ -90,7 +92,7 @@ class AmazonSES extends PHP {
     /**
      * Get a new HTTP client instance.
      *
-     * @return \Guzzle\Http\Client
+     * @return \GuzzleHttp\Client
      */
     protected function http()
     {
