@@ -65,13 +65,13 @@ class Mandrill {
             if(isset($this->eventMapping[$event]))
                 $event = $this->eventMapping[$event];
 
-            SendThis::fire($event, $messageId, $email, $params, $response);
+            \SendThis::fire($event, $messageId, $email, $params, $response);
         }
     }
 
     protected function confirmSubscription($message)
     {
-        SendThis::fire('hooked', '', '', ['subject' => 'Subscribed to Mandrill Web Hook', 'message' => $message]);
+        \SendThis::fire('hooked', '', '', ['subject' => 'Subscribed to Mandrill Web Hook', 'message' => $message]);
         return new \SS_HTTPResponse('', 200, 'success');
     }
 } 

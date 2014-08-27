@@ -33,7 +33,7 @@ class AmazonSES {
     }
 
     protected function confirmSubscription($url, $message = '') {
-        SendThis::fire('hooked', '', '', ['subject' => 'Subscribed to Amazon SNS', 'message' => $message]);
+        \SendThis::fire('hooked', '', '', ['subject' => 'Subscribed to Amazon SNS', 'message' => $message]);
         return file_get_contents($url);
     }
 
@@ -60,7 +60,7 @@ class AmazonSES {
                     else
                         $message = 'Bounced';
 
-                    SendThis::fire('bounced', $messageId, $bounce['emailAddress'], ['permanent' => $permanent, 'message' => $message, 'details' => $bounce], $response);
+                    \SendThis::fire('bounced', $messageId, $bounce['emailAddress'], ['permanent' => $permanent, 'message' => $message, 'details' => $bounce], $response);
                 }
             }
         }
@@ -79,7 +79,7 @@ class AmazonSES {
                         isset($complaint['complaintFeedbackType']) ? '. Reason: ' . $complaint['complaintFeedbackType'] : ''
                     );
 
-                    SendThis::fire('spam', $messageId, $complaint['emailAddress'], ['blacklist' => true, 'details' => $complaint, 'message' => $message], $response);
+                    \SendThis::fire('spam', $messageId, $complaint['emailAddress'], ['blacklist' => true, 'details' => $complaint, 'message' => $message], $response);
                 }
             }
         }
@@ -91,7 +91,7 @@ class AmazonSES {
 
             foreach($recipients as $recipient) {
                 $messageId = isset($response['mail']) && isset($response['mail']['messageId']) ? $response['mail']['messageId'] : '';
-                SendThis::fire('delivered', $messageId, $recipient, [
+                \SendThis::fire('delivered', $messageId, $recipient, [
                         'details' => $response['delivery'],
                         'timestamp' => isset($response['delivery']['timestamp']) ? time($response['delivery']['timestamp']) : ''
                     ], $response
