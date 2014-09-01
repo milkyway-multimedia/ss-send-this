@@ -1,4 +1,6 @@
 <?php
+use Milkyway\SS\EventDispatcher;
+
 /**
  * Milkyway Multimedia
  * SendThis.php
@@ -75,36 +77,12 @@ class SendThis extends Mailer {
             static::listen(['sent'], $callback, true);
     }
 
-    public static function boot() {
-        if(static::config()->disable_default_listeners)
-            return;
+    public static function listen($hooks, $callable, $once = false) {
+        EventDispatcher::inst()->listen('SendThis', $hooks, $callable, $once);
+    }
 
-        $listeners = (array) static::config()->listeners;
-
-        if(count($listeners)) {
-            foreach($listeners as $listener => $options) {
-                $once = false;
-
-                if(is_array($options)) {
-                    $hooks = isset($options['events']) ? $options['events'] : user_error('The listener: ' . $listener . ' requires an events key to establish which events this listener will hook into');
-                    $once = isset($options['first_time_only']);
-
-                    if(isset($options['inject']))
-                        $listener = $options['inject'];
-                }
-                else
-                    $hooks = $options;
-
-                if(is_array($listener)) {
-                    $injectListener = array_shift($listener);
-                    $listener = [Injector::inst()->create($injectListener)] + $listener;
-                }
-                else
-                    $listener = Injector::inst()->create($listener);
-
-                static::listen($hooks, $listener, $once);
-            }
-        }
+    public static function fire($hooks) {
+        EventDispatcher::inst()->fire('SendThis', $hooks);
     }
 
     /** @var \Milkyway\SS\SendThis\Contracts\Transport The mail transport */
