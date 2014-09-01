@@ -20,7 +20,8 @@
 		"guzzlehttp/guzzle"                   : "~4",
 		"tijsverkoyen/css-to-inline-styles"   : "dev-master",
 		"milkyway-multimedia/ss-hashable"     : "dev-master",
-		"milkyway-multimedia/ss-mwm": "dev-master"
+		"milkyway-multimedia/ss-mwm": "dev-master",
+		"milkyway-multimedia/ss-events-handler": "dev-master"
 	},
 	"repositories"     : [
 		{
@@ -30,6 +31,10 @@
 		{
 			"type": "vcs",
 			"url" : "https://github.com/milkyway-multimedia/ss-mwm"
+		},
+		{
+			"type": "vcs",
+			"url" : "https://github.com/milkyway-multimedia/ss-events-handler"
 		}
 	],
 	"config"           : {

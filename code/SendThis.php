@@ -107,65 +107,6 @@ class SendThis extends Mailer {
         }
     }
 
-    /**
-     * Add a listener to a event hook(s)
-     *
-     * @param array|string $hooks
-     * @param Callable $item
-     * @param bool $once Only call the event once (act like a callback)
-     */
-    public static function listen($hooks, $item, $once = false) {
-        $hooks = (array) $hooks;
-
-        foreach($hooks as $hook) {
-            if($once) {
-                if(!isset(static::$callbacks[$hook]))
-                    static::$callbacks[$hook] = [];
-            }
-            elseif(!isset(static::$listeners[$hook]))
-                static::$listeners[$hook] = [];
-
-            if(!is_callable($item))
-                $listener = [$item, $hook];
-            else
-                $listener = $item;
-
-            if($once)
-                static::$callbacks[$hook][] = $listener;
-            else
-                static::$listeners[$hook][] = $listener;
-        }
-    }
-
-    /**
-     * Fire an event(s)
-     *
-     * @param array|string $hooks
-     */
-    public static function fire($hooks) {
-        $hooks = (array)$hooks;
-
-        foreach($hooks as $hook) {
-            if(isset(static::$listeners[$hook])) {
-                $args = func_get_args();
-                array_shift($args);
-
-                foreach(static::$listeners[$hook] as $listener)
-                    call_user_func_array($listener, $args);
-            }
-
-            if(isset(static::$callbacks[$hook])) {
-                $args = func_get_args();
-                array_shift($args);
-
-                foreach(static::$callbacks[$hook] as $listener)
-                    call_user_func_array($listener, $args);
-
-                static::$callbacks[$hook] = [];
-            }
-        }
-    }
-
     /** @var \Milkyway\SS\SendThis\Contracts\Transport The mail transport */
     protected $transport;
 
