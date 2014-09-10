@@ -81,8 +81,10 @@ class SendThis extends Mailer {
         EventDispatcher::inst()->listen('SendThis', $hooks, $callable, $once);
     }
 
-    public static function fire($hooks) {
-        EventDispatcher::inst()->fire('SendThis', $hooks);
+    public static function fire() {
+        $args = func_get_args();
+        array_unshift($args, 'SendThis');
+        call_user_func_array([EventDispatcher::inst(), 'fire'], $args);
     }
 
     /** @var \Milkyway\SS\SendThis\Contracts\Transport The mail transport */
