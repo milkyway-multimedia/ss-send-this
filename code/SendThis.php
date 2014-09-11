@@ -1,5 +1,4 @@
 <?php
-use Milkyway\SS\EventDispatcher;
 
 /**
  * Milkyway Multimedia
@@ -78,13 +77,13 @@ class SendThis extends Mailer {
     }
 
     public static function listen($hooks, $callable, $once = false) {
-        EventDispatcher::inst()->listen('SendThis', $hooks, $callable, $once);
+	    Injector::inst()->get('Milkyway\SS\Events\Dispatcher')->listen('SendThis', $hooks, $callable, $once);
     }
 
     public static function fire() {
         $args = func_get_args();
         array_unshift($args, 'SendThis');
-        call_user_func_array([EventDispatcher::inst(), 'fire'], $args);
+        call_user_func_array([Injector::inst()->get('Milkyway\SS\Events\Dispatcher'), 'fire'], $args);
     }
 
     /** @var \Milkyway\SS\SendThis\Contracts\Transport The mail transport */
