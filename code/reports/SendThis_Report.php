@@ -35,7 +35,7 @@ class SendThis_Report extends SS_Report {
 
 			if(ClassInfo::exists('GridFieldBulkManager')) {
 				$c->addComponent($manager = new GridFieldBulkManager());
-				$manager->removeBulkAction('bulkedit')->removeBulkAction('unlink');
+				//$manager->removeBulkAction('bulkedit')->removeBulkAction('unlink');
 			}
 		}
 

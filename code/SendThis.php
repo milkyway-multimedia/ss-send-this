@@ -245,17 +245,14 @@ class SendThis extends Mailer {
 					$doFrom = SiteConfig::current_site_config()->AdminEmail;
 					if(!$realFromName) $doFromName = SiteConfig::current_site_config()->AdminName;
 				}
-				else {
+
+				if(!$doFrom || (is_bool($sameDomain) && !(substr($doFrom, -strlen($base)) === $base))) {
 					$doFrom = $this->admin_email();
 					if(!$realFromName) $doFromName = singleton('LeftAndMain')->ApplicationName;
 				}
 
-				if(is_bool($sameDomain) && !(substr($doFrom, -strlen($base)) === $base)) {
-					$doFrom = $this->admin_email();
-					if(!$realFromName) $doFromName = singleton('LeftAndMain')->ApplicationName;
-				}
-
-				$email->addReplyTo($realFrom, $realFromName);
+				if(!isset($headers['Reply-To']))
+					$email->addReplyTo($realFrom, $realFromName);
 			}
 		}
 
