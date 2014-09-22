@@ -1,47 +1,38 @@
 {
-	"name"             : "milkyway-multimedia/ss-send-this",
-	"description"      : "Another mailer for Silverstripe...",
-	"type"             : "silverstripe-module",
-	"keywords"         : [
+	"name"              : "milkyway-multimedia/ss-send-this",
+	"description"       : "Another mailer for Silverstripe...",
+	"type"              : "silverstripe-module",
+	"keywords"          : [
 		"silverstripe",
 		"email"
 	],
-	"license"          : "MIT",
-	"authors"          : [
+	"license"           : "MIT",
+	"authors"           : [
 		{
-			"name" : "Mellisa Hankins",
-			"email": "mell@milkywaymultimedia.com.au"
+			"name"  : "Mellisa Hankins",
+			"email" : "mell@milkywaymultimedia.com.au"
 		}
 	],
-	"require"          : {
-		"php": ">=5.4.0",
-		"silverstripe/framework"              : "~3.1",
-		"phpmailer/phpmailer"                 : "~5.2",
-		"guzzlehttp/guzzle"                   : "~4",
-		"tijsverkoyen/css-to-inline-styles"   : "dev-master",
-		"milkyway-multimedia/ss-hashable"     : "dev-master",
-		"milkyway-multimedia/ss-mwm": "dev-master",
-		"milkyway-multimedia/ss-events-handler": "dev-master"
+	"require"           : {
+		"php"                                   : ">=5.4.0",
+		"silverstripe/framework"                : "~3.1",
+		"phpmailer/phpmailer"                   : "~5.2",
+		"guzzlehttp/guzzle"                     : "~4",
+		"milkyway-multimedia/ss-hashable"       : "dev-master",
+		"milkyway-multimedia/ss-mwm"            : "dev-master",
+		"milkyway-multimedia/ss-events-handler" : "dev-master"
 	},
-	"repositories"     : [
+	"repositories"      : [
 		{
-			"type": "vcs",
-			"url" : "https://github.com/milkyway-multimedia/ss-hashable"
-		},
-		{
-			"type": "vcs",
-			"url" : "https://github.com/milkyway-multimedia/ss-mwm"
-		},
-		{
-			"type": "vcs",
-			"url" : "https://github.com/milkyway-multimedia/ss-events-handler"
+			"type" : "vcs",
+			"url"  : "https://github.com/milkyway-multimedia/ss-hashable"
 		}
 	],
-	"config"           : {
-		"process-timeout": 600
+	"config"            : {
+		"process-timeout" : 600
 	},
-	"minimum-stability": "dev",
-	"extra"            : {
-		"installer-name": "send-this"
+	"minimum-stability" : "dev",
+	"extra"             : {
+		"installer-name" : "send-this"
 	}
 }

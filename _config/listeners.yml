@@ -12,7 +12,7 @@ EventDispatcher:
       'Milkyway\SS\SendThis\Listeners\Logging':
         events: ['up', 'sent', 'failed', 'bounced', 'spam', 'rejected', 'blacklisted', 'whitelisted']
       'Milkyway\SS\SendThis\Listeners\Notifications':
-        events: ['hooked', 'up', 'failed', 'rejected', 'bounced', 'spam']
+        events: ['hooked', 'handled', 'up', 'failed', 'rejected', 'bounced', 'spam']
       'Milkyway\SS\SendThis\Listeners\Tracking':
         events: ['up', 'sending', 'opened', 'clicked']
       'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking':

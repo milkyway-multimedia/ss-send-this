@@ -34,6 +34,25 @@ class Notifications {
         }
     }
 
+	public function handled($e, $event, $request) {
+		if($email = getenv('sendthis_notify_on_webhook_events')) {
+			$originalSMTP = ini_get('SMTP');
+
+			if($customSMTP = \SendThis::config()->smtp_for_debugging)
+				ini_set('SMTP', $customSMTP);
+
+			mail(
+				$email,
+				'Web hook called for event: ' . $event,
+				print_r($request, true),
+				"Content-type: text/html\nFrom: " . $email
+			);
+
+			if($customSMTP)
+				ini_set('SMTP', $originalSMTP);
+		}
+	}
+
     public function failed($e, $messageId, $email, $params, $response) {
         $this->notifyByMessageId($messageId, $email, $response);
     }

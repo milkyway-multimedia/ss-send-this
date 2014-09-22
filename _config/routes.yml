@@ -6,5 +6,7 @@ After:
 ---
 Director:
   rules:
-    'email-subscriptions//$Action/$Email': 'SendThis_Controller'
-    '$Slug/mail-footer.gif': 'SendThis_Tracker'
+    'email-subscriptions//$Action/$Email': 'Milkyway\SS\SendThis\Controllers\EmailSubscriptions'
+    'mailer/m': 'Milkyway\SS\SendThis\Controllers\Mandrill'
+    'mailer/a': 'Milkyway\SS\SendThis\Controllers\AmazonSes'
+    '$Slug/mail-footer.gif': 'Milkyway\SS\SendThis\Controllers\Tracker'
