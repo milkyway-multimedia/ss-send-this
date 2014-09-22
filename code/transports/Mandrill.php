@@ -10,7 +10,7 @@
 class Mandrill extends Mail {
     protected $endpoint = 'https://mandrillapp.com/api/1.0';
 
-    protected $async = true;
+    protected $async = false;
     protected $sendAt;
     protected $returnPathDomain;
 
@@ -36,7 +36,7 @@ class Mandrill extends Mail {
                     'body' => [
                         'key' => $key,
                         'raw_message' => $messenger->GetSentMIMEMessage(),
-                        'async' => true,
+                        'async' => $this->async,
                     ],
                 ]
             );
