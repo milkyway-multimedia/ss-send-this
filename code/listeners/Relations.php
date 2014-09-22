@@ -7,7 +7,7 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Relations {
-    public function up($messageId, $email, $params, $response, $log, $headers) {
+    public function up($e, $messageId, $email, $params, $response, $log, $headers) {
         if(!$log) return;
 
         foreach (get_object_vars($headers) as $k => $v)

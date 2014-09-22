@@ -8,7 +8,7 @@
  */
 
 class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
-    public function opened($messageId = '', $email = '', $params = [], $response = [], $log = null) {
+    public function opened($e, $messageId = '', $email = '', $params = [], $response = [], $log = null) {
         if (!SendThis::config()->api_tracking) return;
         $logs = null;
 
@@ -35,7 +35,7 @@ class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
         }
     }
 
-    public function clicked($messageId = '', $email = '', $params = [], $response = [], $link = null) {
+    public function clicked($e, $messageId = '', $email = '', $params = [], $response = [], $link = null) {
         if (!SendThis::config()->api_tracking) return;
 
         if(isset($response['url']) && $messageId) {

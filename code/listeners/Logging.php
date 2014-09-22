@@ -9,7 +9,7 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Logging {
-    public function up($messageId, $email, $params, $response, $log, $headers) {
+    public function up($e, $messageId, $email, $params, $response, $log, $headers) {
         if (!\SendThis::config()->logging) return;
 
         if($log) {
@@ -66,7 +66,7 @@ class Logging {
         }
     }
 
-    public function sent($messageId = '', $email = '', $params = [], $response = [], $log = null) {
+    public function sent($e, $messageId = '', $email = '', $params = [], $response = [], $log = null) {
         if($log) {
             $log->Sent = date('Y-m-d H:i:s');
 
@@ -76,7 +76,7 @@ class Logging {
         }
     }
 
-    public function failed($messageId = '', $email = '', $params = [], $response = [], $log = null) {
+    public function failed($e, $messageId = '', $email = '', $params = [], $response = [], $log = null) {
         if($log) {
             $params['MessageID'] = $messageId;
             $params['success'] = false;
@@ -84,7 +84,7 @@ class Logging {
         }
     }
 
-    public function bounced($messageId = '', $email = '', $params = [], $response = []) {
+    public function bounced($e, $messageId = '', $email = '', $params = [], $response = []) {
         $base = '@' . trim(str_replace(['http://', 'https://', 'www.'], '', self::protocolAndHost()), ' /');
         $blacklistAfter = SendThis::config()->blacklist_after_bounced ? SendThis::config()->blacklist_after_bounced : 2;
         $permanent = isset($params['permanent']);
@@ -118,21 +118,21 @@ class Logging {
             $bounce->write();
     }
 
-    public function spam($messageId = '', $email = '', $params = [], $response = []) {
+    public function spam($e, $messageId = '', $email = '', $params = [], $response = []) {
         if(!isset($params['message']))
             $params['message'] = 'The email address marked this email as spam';
 
         $this->updateBadEmail($messageId, $email, $params);
     }
 
-    public function rejected($messageId = '', $email = '', $params = [], $response = []) {
+    public function rejected($e, $messageId = '', $email = '', $params = [], $response = []) {
         if(!isset($params['message']))
             $params['message'] = 'The end point has rejected this email for some reason';
 
         $this->updateBadEmail($messageId, $email, $params);
     }
 
-    public function blacklisted($messageId = '', $email = '', $params = [], $response = []) {
+    public function blacklisted($e, $messageId = '', $email = '', $params = [], $response = []) {
         if(!isset($params['message']))
             $params['message'] = 'The user of this email has requested to be blacklisted from this application';
 
@@ -141,7 +141,7 @@ class Logging {
         $this->updateBadEmail($messageId, $email, $params);
     }
 
-    public function whitelisted($messageId = '', $email = '', $params = [], $response = []) {
+    public function whitelisted($e, $messageId = '', $email = '', $params = [], $response = []) {
         if(!$email) return;
 
         if(!isset($params['message']))

@@ -9,7 +9,7 @@
  */
 class Tracking {
 
-    public function up($messageId, $email, $params, $response, $log, $headers)
+    public function up($e, $messageId, $email, $params, $response, $log, $headers)
     {
         if (! $log)
         {
@@ -76,7 +76,7 @@ class Tracking {
         }
     }
 
-    public function sending($messageId = '', $email = '', $params = [], $response = [], $log = null)
+    public function sending($e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
         if (! \SendThis::config()->tracking)
         {
@@ -110,7 +110,7 @@ class Tracking {
         }
     }
 
-    public function opened($messageId = '', $email = '', $params = [], $response = [], $log = null)
+    public function opened($e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
         if (! \SendThis::config()->tracking)
         {
@@ -145,7 +145,7 @@ class Tracking {
         }
     }
 
-    public function clicked($messageId = '', $email = '', $params = [], $response = [], $link = null)
+    public function clicked($e, $messageId = '', $email = '', $params = [], $response = [], $link = null)
     {
         if (! \SendThis::config()->tracking || ! $link)
         {

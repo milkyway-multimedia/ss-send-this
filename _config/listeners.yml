@@ -5,8 +5,8 @@ After:
   - 'cms/*'
 ---
 EventDispatcher:
-  SendThis:
-    listeners:
+  listeners:
+    SendThis:
       'Milkyway\SS\SendThis\Listeners\Relations':
         events: ['up']
       'Milkyway\SS\SendThis\Listeners\Logging':

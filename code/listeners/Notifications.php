@@ -7,7 +7,7 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Notifications {
-    public function up($messageId, $email, $params, $response, $log, $headers) {
+    public function up($e, $messageId, $email, $params, $response, $log, $headers) {
         if ($log && isset($headers->{'X-NotifyOnFail'}) && $headers->{'X-NotifyOnFail'})
         {
             $log->Notify_Sender = $headers->{'X-NotifyOnFail'};
@@ -15,7 +15,7 @@ class Notifications {
         }
     }
 
-    public function hooked($messageId, $email, $params, $response) {
+    public function hooked($e, $messageId, $email, $params, $response) {
         if(\SendThis::config()->debugging && $email = \Email::config()->admin_email) {
             $originalSMTP = ini_get('SMTP');
 
@@ -34,19 +34,19 @@ class Notifications {
         }
     }
 
-    public function failed($messageId, $email, $params, $response) {
+    public function failed($e, $messageId, $email, $params, $response) {
         $this->notifyByMessageId($messageId, $email, $response);
     }
 
-    public function bounced($messageId, $email, $params, $response) {
+    public function bounced($e, $messageId, $email, $params, $response) {
         $this->notifyByMessageId($messageId, $email, $response);
     }
 
-    public function spam($messageId, $email, $params, $response) {
+    public function spam($e, $messageId, $email, $params, $response) {
         $this->notifyByMessageId($messageId, $email, $response);
     }
 
-    public function rejected($messageId, $email, $params, $response) {
+    public function rejected($e, $messageId, $email, $params, $response) {
         $this->notifyByMessageId($messageId, $email, $response);
     }
 

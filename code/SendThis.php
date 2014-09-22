@@ -238,17 +238,19 @@ class SendThis extends Mailer {
 				$realFromName = $doFromName;
 
 				if(!is_bool($sameDomain)) {
-					$doFrom = $sameDomain;
-					if(!$realFromName) $doFromName = ClassInfo::exists('SiteConfig') ? SiteConfig::current_site_config()->AdminName : singleton('LeftAndMain')->ApplicationName;
+                    list($doFrom, $doFromName) = $this->split_email($sameDomain);
+					if(!$realFromName && !$doFromName)
+                        $doFromName = ClassInfo::exists('SiteConfig') ? SiteConfig::current_site_config()->AdminName : singleton('LeftAndMain')->ApplicationName;
 				}
-				elseif(ClassInfo::exists('SiteConfig')) {
-					$doFrom = SiteConfig::current_site_config()->AdminEmail;
-					if(!$realFromName) $doFromName = SiteConfig::current_site_config()->AdminName;
+
+                if((!$doFrom || (is_bool($sameDomain) && !(substr($doFrom, -strlen($base)) === $base))) && ClassInfo::exists('SiteConfig')) {
+                    list($doFrom, $doFromName) = $this->split_email(SiteConfig::current_site_config()->AdminEmail);
+					if(!$realFromName && !$doFromName) $doFromName = SiteConfig::current_site_config()->AdminName;
 				}
 
 				if(!$doFrom || (is_bool($sameDomain) && !(substr($doFrom, -strlen($base)) === $base))) {
-					$doFrom = $this->admin_email();
-					if(!$realFromName) $doFromName = singleton('LeftAndMain')->ApplicationName;
+                    list($doFrom, $doFromName) = $this->split_email($this->admin_email());
+					if(!$realFromName && !$doFromName) $doFromName = singleton('LeftAndMain')->ApplicationName;
 				}
 
 				if(!isset($headers['Reply-To']))
@@ -258,9 +260,10 @@ class SendThis extends Mailer {
 
 		if(!$doFrom) {
 			if(ClassInfo::exists('SiteConfig'))
-				$doFrom = SiteConfig::current_site_config()->AdminEmail;
-			else
-				$doFrom = $this->admin_email();
+                list($doFrom, $doFromName) = $this->split_email(SiteConfig::current_site_config()->AdminEmail);
+
+            if(!$doFrom)
+                list($doFrom, $doFromName) = $this->split_email($this->admin_email());
 		}
 
 		$email->setFrom($doFrom, $doFromName);
