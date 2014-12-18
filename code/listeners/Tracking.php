@@ -1,4 +1,5 @@
 <?php namespace Milkyway\SS\SendThis\Listeners;
+use Milkyway\SS\SendThis\Events\Event;
 
 /**
  * Milkyway Multimedia
@@ -9,7 +10,7 @@
  */
 class Tracking {
 
-    public function up($e, $messageId, $email, $params, $response, $log, $headers)
+    public function up(Event $e, $messageId, $email, $params, $response, $log, $headers)
     {
         if (! $log)
         {
@@ -39,7 +40,7 @@ class Tracking {
             unset($headers->{'X-LinkData'});
         }
 
-        if (! \SendThis::config()->tracking)
+        if (! $e->mailer()->config()->tracking)
         {
             return;
         }
@@ -76,9 +77,9 @@ class Tracking {
         }
     }
 
-    public function sending($e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
+    public function sending(Event $e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
-        if (! \SendThis::config()->tracking)
+        if (! $e->mailer()->config()->tracking)
         {
             if ($log && $params['message']->ContentType == 'text/html') {
                 $params['message']->Body = $this->removeTracker($log, $this->trackLinks($log, $params['message']->Body));
@@ -110,9 +111,9 @@ class Tracking {
         }
     }
 
-    public function opened($e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
+    public function opened(Event $e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
-        if (! \SendThis::config()->tracking)
+        if (! $e->mailer()->config()->tracking)
         {
             return;
         }
@@ -145,9 +146,9 @@ class Tracking {
         }
     }
 
-    public function clicked($e, $messageId = '', $email = '', $params = [], $response = [], $link = null)
+    public function clicked(Event $e, $messageId = '', $email = '', $params = [], $response = [], $link = null)
     {
-        if (! \SendThis::config()->tracking || ! $link)
+        if (! $e->mailer()->config()->tracking || ! $link)
         {
             return;
         }
@@ -208,11 +209,11 @@ class Tracking {
                 {
                     if ($log->Track_Links)
                     {
-                        $link = $log->Links()->filter('Original', Convert::raw2sql($url))->first();
+                        $link = $log->Links()->filter('Original', \Convert::raw2sql($url))->first();
 
                         if (! $link)
                         {
-                            $link           = SendThis_Link::create();
+                            $link           = \SendThis_Link::create();
                             $link->Original = $this->getURLWithData($log, $url);
                             $link->LogID    = $id;
                             $link->write();
@@ -310,7 +311,7 @@ class Tracking {
                 );
             } elseif (isset($tracked['Referrer']))
             {
-                foreach (SendThis_Log::config()->web_based_clients as $name => $url)
+                foreach (\SendThis_Log::config()->web_based_clients as $name => $url)
                 {
                     if (preg_match("/$url/", $tracked['Referrer']))
                     {

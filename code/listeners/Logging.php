@@ -1,4 +1,7 @@
 <?php namespace Milkyway\SS\SendThis\Listeners;
+use Milkyway\SS\Director;
+use Milkyway\SS\SendThis\Events\Event;
+
 /**
  * Milkyway Multimedia
  * Logging.php
@@ -9,8 +12,8 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Logging {
-    public function up($e, $messageId, $email, $params, $response, $log, $headers) {
-        if (!\SendThis::config()->logging) return;
+    public function up(Event $e, $messageId, $email, $params, $response, $log, $headers) {
+        if (!$e->mailer()->config()->logging) return;
 
         if($log) {
             $log->To      = $params['to'];
@@ -84,9 +87,9 @@ class Logging {
         }
     }
 
-    public function bounced($e, $messageId = '', $email = '', $params = [], $response = []) {
-        $base = '@' . trim(str_replace(['http://', 'https://', 'www.'], '', self::protocolAndHost()), ' /');
-        $blacklistAfter = SendThis::config()->blacklist_after_bounced ? SendThis::config()->blacklist_after_bounced : 2;
+    public function bounced(Event $e, $messageId = '', $email = '', $params = [], $response = []) {
+        $base = '@' . trim(Director::baseWebsiteURL(), ' /');
+        $blacklistAfter = $e->mailer()->config()->blacklist_after_bounced ?: 2;
         $permanent = isset($params['permanent']);
 
         $bounce = null;
@@ -105,7 +108,7 @@ class Logging {
             if ((\SendThis_Bounce::get()->filter('Email', $email)->count() + 1) >= $blacklistAfter || $permanent) {
                 $message = "\n\n" . print_r($response, true);
                 $message = $permanent ? 'Permanent Bounce' . $message : 'Bounced too many times' . $message;
-                \SendThis::fire('spam', $messageId, $email, $params + ['message' => $message], $response);
+                $e->mailer()->eventful()->fire(Event::named('spam', $e->mailer()), $messageId, $email, $params + ['message' => $message], $response);
                 $bounce->write();
                 return;
             }

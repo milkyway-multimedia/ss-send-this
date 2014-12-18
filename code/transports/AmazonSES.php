@@ -1,4 +1,5 @@
 <?php namespace Milkyway\SS\SendThis\Transports;
+use Milkyway\SS\SendThis\Events\Event;
 
 /**
  * Milkyway Multimedia
@@ -27,7 +28,7 @@ class AmazonSes extends Mail {
                     'headers' => array(
                         'User-Agent' => $userAgent,
                         'Date' => $date,
-                        'Host' => str_replace(array('http://', 'https://'), '', $this->endpoint),
+                        'Host' => str_replace(array('http://', 'https://'), '', $this->endpoint()),
                         'Content-Type' => 'application/x-www-form-urlencoded',
                         'X-Amzn-Authorization' => 'AWS3-HTTPS AWSAccessKeyId=' . urlencode($this->params['key']) . ',Algorithm=HmacSHA256,Signature=' . base64_encode(hash_hmac('sha256', $date, $this->params['secret'], true)),
                     ),
@@ -76,7 +77,7 @@ class AmazonSes extends Mail {
         if(($result = $results->SendRawEmailResult) && isset($result['MessageId']))
             $messageId = $result['MessageId'];
 
-        $this->eventful->fire('sent', $messageId, $messenger->getToAddresses(), $results, $results, $log);
+        $this->mailer->eventful()->fire(Event::named('sendthis.sent', $this->mailer), $messageId, $messenger->getToAddresses(), $results, $results, $log);
 
         return true;
     }

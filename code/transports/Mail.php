@@ -1,6 +1,7 @@
 <?php namespace Milkyway\SS\SendThis\Transports;
 
-use Milkyway\SS\Eventful\Contract as Eventful;
+use Milkyway\SS\SendThis\Events\Event;
+use Milkyway\SS\SendThis\Mailer;
 
 /**
  * Milkyway Multimedia
@@ -10,12 +11,12 @@ use Milkyway\SS\Eventful\Contract as Eventful;
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Mail implements Contract {
-	protected $eventful;
+	protected $mailer;
 	protected $params = [];
 
-    public function __construct(\PHPMailer $messenger, Eventful $eventful, $params = []) {
+    public function __construct(\PHPMailer $messenger, Mailer $mailer, $params = []) {
         $messenger->isMail();
-	    $this->eventful = $eventful;
+	    $this->mailer = $mailer;
 	    $this->params = array_merge($this->params, $params);
     }
 
@@ -25,7 +26,7 @@ class Mail implements Contract {
             $response = compact($success, $to, $cc, $bcc, $subject, $body, $from);
 
             if($success)
-                $this->eventful->fire('sent', $messenger->getLastMessageID(), $to, $response, $response, $log);
+                $this->mailer->eventful()->fire(Event::named('sendthis.sent', $this->mailer), $messenger->getLastMessageID(), $to, $response, $response, $log);
             else
                 throw new Exception('Message not successfully sent' . "\n\n" . nl2br(print_r($response, true)));
         };

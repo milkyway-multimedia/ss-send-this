@@ -10,6 +10,9 @@
 namespace Milkyway\SS\SendThis\Controllers;
 
 
+use Milkyway\SS\SendThis\Events\Event;
+use Milkyway\SS\SendThis\Mailer;
+
 class AmazonSes extends \Controller {
 	public function index($request) {
 		$body = $request->getBody();
@@ -34,7 +37,9 @@ class AmazonSes extends \Controller {
 				$this->doDeliveryHandling($response);
 			}
 
-			\SendThis::fire('handled', $data->Type, $request);
+			if(\Email::mailer() instanceof Mailer) {
+				\Email::mailer()->eventful()->fire(Event::named('sendthis.handled', \Email::mailer()), $data->Type, $request);
+			}
 		}
 
 		$controller = $this->displayNiceView($this);
@@ -47,7 +52,10 @@ class AmazonSes extends \Controller {
 	}
 
 	protected function confirmSubscription($url, $message = '') {
-		\SendThis::fire('hooked', '', '', ['subject' => 'Subscribed to Amazon SNS', 'message' => $message]);
+		if(\Email::mailer() instanceof Mailer) {
+			\Email::mailer()->eventful()->fire(Event::named('sendthis.hooked', \Email::mailer()), '', '', ['subject' => 'Subscribed to Amazon SNS', 'message' => $message]);
+		}
+
 		return file_get_contents($url);
 	}
 
@@ -74,7 +82,9 @@ class AmazonSes extends \Controller {
 					else
 						$message = 'Bounced';
 
-					\SendThis::fire('bounced', $messageId, $bounce['emailAddress'], ['permanent' => $permanent, 'message' => $message, 'details' => $bounce], $response);
+					if(\Email::mailer() instanceof Mailer) {
+						\Email::mailer()->eventful()->fire(Event::named('sendthis.bounced', \Email::mailer()), $messageId, $bounce['emailAddress'], ['permanent' => $permanent, 'message' => $message, 'details' => $bounce], $response);
+					}
 				}
 			}
 		}
@@ -93,7 +103,9 @@ class AmazonSes extends \Controller {
 						isset($complaint['complaintFeedbackType']) ? '. Reason: ' . $complaint['complaintFeedbackType'] : ''
 					);
 
-					\SendThis::fire('spam', $messageId, $complaint['emailAddress'], ['blacklist' => true, 'details' => $complaint, 'message' => $message], $response);
+					if(\Email::mailer() instanceof Mailer) {
+						\Email::mailer()->eventful()->fire(Event::named('sendthis.spam', \Email::mailer()), $messageId, $complaint['emailAddress'], ['blacklist' => true, 'details' => $complaint, 'message' => $message], $response);
+					}
 				}
 			}
 		}
@@ -105,11 +117,13 @@ class AmazonSes extends \Controller {
 
 			foreach($recipients as $recipient) {
 				$messageId = isset($response['mail']) && isset($response['mail']['messageId']) ? $response['mail']['messageId'] : '';
-				\SendThis::fire('delivered', $messageId, $recipient, [
+				if(\Email::mailer() instanceof Mailer) {
+					\Email::mailer()->eventful()->fire(Event::named('sendthis.delivered', \Email::mailer()), $messageId, $recipient, [
 						'details' => $response['delivery'],
 						'timestamp' => isset($response['delivery']['timestamp']) ? time($response['delivery']['timestamp']) : ''
 					], $response
-				);
+					);
+				}
 			}
 		}
 	}

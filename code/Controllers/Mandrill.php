@@ -9,6 +9,9 @@
 
 namespace Milkyway\SS\SendThis\Controllers;
 
+use Milkyway\SS\SendThis\Events\Event;
+use Milkyway\SS\SendThis\Mailer;
+
 class Mandrill extends \Controller
 {
 	protected $eventMapping = [
@@ -60,8 +63,10 @@ class Mandrill extends \Controller
 			if (isset($this->eventMapping[$event]))
 				$event = $this->eventMapping[$event];
 
-			\SendThis::fire($event, $messageId, $email, $params, $response);
-			\SendThis::fire('handled', $event, $request);
+			if(\Email::mailer() instanceof Mailer) {
+				\Email::mailer()->eventful()->fire(Event::named('sendthis.' . $event, \Email::mailer()), $messageId, $email, $params, $response);
+				\Email::mailer()->eventful()->fire(Event::named('sendthis.handled', \Email::mailer()), $event, $request);
+			}
 		}
 
 		$controller = $this->displayNiceView($this);
@@ -75,7 +80,9 @@ class Mandrill extends \Controller
 
 	protected function confirmSubscription($message)
 	{
-		\SendThis::fire('hooked', '', '', ['subject' => 'Subscribed to Mandrill Web Hook', 'message' => $message]);
+		if(\Email::mailer() instanceof Mailer) {
+			\Email::mailer()->eventful()->fire(Event::named('sendthis.hooked', \Email::mailer()), '', '', ['subject' => 'Subscribed to Mandrill Web Hook', 'message' => $message]);
+		}
 
 		return new \SS_HTTPResponse('', 200, 'success');
 	}

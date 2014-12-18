@@ -1,6 +1,5 @@
 <?php namespace Milkyway\SS\SendThis\Transports;
-
-use Milkyway\SS\Eventful\Contract as Eventful;
+use Milkyway\SS\SendThis\Mailer;
 
 /**
  * Milkyway Multimedia
@@ -10,8 +9,8 @@ use Milkyway\SS\Eventful\Contract as Eventful;
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class SMTP extends Mail {
-	public function __construct(\PHPMailer $messenger, Eventful $eventful, $params = []) {
-		parent::__construct($messenger, $eventful, $params);
+	public function __construct(\PHPMailer $messenger, Mailer $mailer, $params = []) {
+		parent::__construct($messenger, $mailer, $params);
 
         $messenger->isSMTP();
 

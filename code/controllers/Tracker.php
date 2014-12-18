@@ -1,5 +1,6 @@
 <?php namespace Milkyway\SS\SendThis\Controllers;
 
+use Milkyway\SS\SendThis\Events\Event;
 use Milkyway\SS\SendThis\Mailer;
 
 /**
@@ -19,7 +20,7 @@ class Tracker extends \Controller {
 
             if(($log = \SendThis_Log::get()->filter('Slug', $id)->first())) {
 	            if(\Email::mailer() instanceof Mailer) {
-		            \Email::mailer()->eventful()->fire('opened', $log->MessageID, $log->To, ['IP' => $r->getIP()], [
+		            \Email::mailer()->eventful()->fire(Event::named('sendthis.opened', \Email::mailer()), $log->MessageID, $log->To, ['IP' => $r->getIP()], [
 	                        'Referrer' => isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null,
 	                        'UserAgent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null,
 	                    ], $log

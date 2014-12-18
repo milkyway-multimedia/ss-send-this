@@ -1,4 +1,5 @@
 <?php namespace Milkyway\SS\SendThis\Transports;
+use Milkyway\SS\SendThis\Events\Event;
 
 /**
  * Milkyway Multimedia
@@ -72,7 +73,7 @@ class Mandrill extends Mail {
                 throw new Exception($message);
             }
 
-            $this->eventful->fire('sent', $messageId ? $messageId : $messenger->getLastMessageID(), $email, $results, $results, $log);
+            $this->mailer->eventful()->fire(Event::named('sendthis.sent', $this->mailer), $messageId ? $messageId : $messenger->getLastMessageID(), $email, $results, $results, $log);
         }
 
         return true;

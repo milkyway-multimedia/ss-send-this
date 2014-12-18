@@ -1,4 +1,6 @@
 <?php namespace Milkyway\SS\SendThis\Listeners\Mandrill;
+use Milkyway\SS\SendThis\Events\Event;
+
 /**
  * Milkyway Multimedia
  * Tracking.php
@@ -8,12 +10,12 @@
  */
 
 class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
-    public function opened($e, $messageId = '', $email = '', $params = [], $response = [], $log = null) {
-        if (!SendThis::config()->api_tracking) return;
+    public function opened(Event $e, $messageId = '', $email = '', $params = [], $response = [], $log = null) {
+        if (!$e->mailer()->config()->api_tracking) return;
         $logs = null;
 
         if($messageId)
-            $logs = SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'ASC');
+            $logs = \SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'ASC');
 
         if(!$logs || !$logs->exists())
             return;
@@ -35,11 +37,11 @@ class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
         }
     }
 
-    public function clicked($e, $messageId = '', $email = '', $params = [], $response = [], $link = null) {
-        if (!SendThis::config()->api_tracking) return;
+    public function clicked(Event $e, $messageId = '', $email = '', $params = [], $response = [], $link = null) {
+        if (!$e->mailer()->config()->api_tracking) return;
 
         if(isset($response['url']) && $messageId) {
-            $logs = SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'DESC');
+            $logs = \SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'DESC');
 
             if(!$logs || !$logs->exists())
                 return;
@@ -50,10 +52,10 @@ class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
             }
 
             if($link) {
-                if (! Cookie::get('tracking-email-link-' . $link->Slug))
+                if (! \Cookie::get('tracking-email-link-' . $link->Slug))
                 {
                     $link->Visits ++;
-                    Cookie::set('tracking-email-link-' . $link->Slug, true);
+                    \Cookie::set('tracking-email-link-' . $link->Slug, true);
                 }
 
                 if (! $link->Clicked)

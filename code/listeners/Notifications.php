@@ -1,4 +1,7 @@
 <?php namespace Milkyway\SS\SendThis\Listeners;
+use Milkyway\SS\SendThis\Events\Event;
+use Milkyway\SS\SendThis\Mailer;
+
 /**
  * Milkyway Multimedia
  * Notifications.php
@@ -15,11 +18,11 @@ class Notifications {
         }
     }
 
-    public function hooked($e, $messageId, $email, $params, $response) {
-        if(\SendThis::config()->debugging && $email = \Email::config()->admin_email) {
+    public function hooked(Event $e, $messageId, $email, $params, $response) {
+        if($e->mailer()->config()->debugging && $email = \Email::config()->admin_email) {
             $originalSMTP = ini_get('SMTP');
 
-            if($customSMTP = \SendThis::config()->smtp_for_debugging)
+            if($customSMTP = $e->mailer()->config()->smtp_for_debugging)
                 ini_set('SMTP', $customSMTP);
 
             mail(
@@ -34,11 +37,11 @@ class Notifications {
         }
     }
 
-	public function handled($e, $event, $request) {
+	public function handled(Event $e, $event, $request) {
 		if($email = getenv('sendthis_notify_on_webhook_events')) {
 			$originalSMTP = ini_get('SMTP');
 
-			if($customSMTP = \SendThis::config()->smtp_for_debugging)
+			if($customSMTP = $e->mailer()->config()->smtp_for_debugging)
 				ini_set('SMTP', $customSMTP);
 
 			mail(
@@ -53,39 +56,39 @@ class Notifications {
 		}
 	}
 
-    public function failed($e, $messageId, $email, $params, $response) {
-        $this->notifyByMessageId($messageId, $email, $response);
+    public function failed(Event $e, $messageId, $email, $params, $response) {
+        $this->notifyByMessageId($messageId, $email, $response, $e->mailer());
     }
 
-    public function bounced($e, $messageId, $email, $params, $response) {
-        $this->notifyByMessageId($messageId, $email, $response);
+    public function bounced(Event $e, $messageId, $email, $params, $response) {
+        $this->notifyByMessageId($messageId, $email, $response, $e->mailer());
     }
 
-    public function spam($e, $messageId, $email, $params, $response) {
-        $this->notifyByMessageId($messageId, $email, $response);
+    public function spam(Event $e, $messageId, $email, $params, $response) {
+        $this->notifyByMessageId($messageId, $email, $response, $e->mailer());
     }
 
-    public function rejected($e, $messageId, $email, $params, $response) {
-        $this->notifyByMessageId($messageId, $email, $response);
+    public function rejected(Event $e, $messageId, $email, $params, $response) {
+        $this->notifyByMessageId($messageId, $email, $response, $e->mailer());
     }
 
-    public function notifyByMessageId($messageId, $email = '', $response = []) {
+    protected function notifyByMessageId($messageId, $email = '', $response = [], Mailer $mailer = null) {
         if($messageId) {
             $logs = \SendThis_Log::get()->filter('MessageID', $messageId);
 
             if($logs->exists()) {
                 foreach($logs as $log) {
-                    $this->sendNotificationToSender($log, $email, $response);
+                    $this->sendNotificationToSender($log, $email, $response, false, $mailer);
                 }
             }
         }
     }
 
-    protected function sendNotificationToSender($log, $email, $response = [], $write = false) {
-        if ($log && ($log->Notify_Sender && ($log->From || $log->SentBy()->exists())) || \SendThis::config()->notify_on_fail)
+    protected function sendNotificationToSender($log, $email, $response = [], $write = false, Mailer $mailer = null) {
+        if ($log && ($log->Notify_Sender && ($log->From || $log->SentBy()->exists())) || ($mailer && $mailer->config()->notify_on_fail))
         {
             $from = $log->Notify_Sender;
-            $notify = \SendThis::config()->notify_on_fail;
+            $notify = ($mailer && $mailer->config()->notify_on_fail);
 
             if (! \Email::is_valid_address($from))
             {
@@ -113,18 +116,20 @@ class Notifications {
                 _t(
                     'SendThis_Log.SUBJECT-EMAIL_BOUNCED',
                     'Email bounced: {subject}',
-                    ['subject' => $this->Subject]
+                    [
+                        'subject' => isset($response['Subject']) ? $response['Subject'] : '',
+                    ]
                 ),
                 _t(
                     'SendThis_Log.EMAIL_BOUNCED',
                     'An email (subject: {subject}) addressed to {to} sent via {application} has bounced. For security reasons, we cannot display its contents. {message}',
                     [
-                        'subject'     => $this->Subject,
+                        'subject' => isset($response['Subject']) ? $response['Subject'] : '',
                         'application' => singleton('LeftAndMain')->ApplicationName,
                         'to'          => $email,
                         'message'     => nl2br(print_r($response, true)),
                     ]
-                ) . "\n\n<p>" . $this->Notes . '</p>'
+                ) . "\n\n<p>" . $log ? $log->Notes : '' . '</p>'
             );
 
             if($notify)

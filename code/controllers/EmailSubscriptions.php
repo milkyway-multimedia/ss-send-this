@@ -1,4 +1,7 @@
 <?php namespace Milkyway\SS\SendThis\Controllers;
+use Milkyway\SS\SendThis\Events\Event;
+use Milkyway\SS\SendThis\Mailer;
+
 /**
  * Milkyway Multimedia
  * SendThis_Controller.php
@@ -113,7 +116,9 @@ class EmailSubscriptions extends \Controller {
 		$fields = $form->Data;
 
 		if(!\SendThis_Blacklist::get()->filter('Email', $fields['Email'])->exists()) {
-            \SendThis::fire('blacklisted', '', $fields['Email'], ['message' => _t('SendThis.BLACKLIST_BY_USER', 'Unsubscribe by user'), 'internal' => true], $fields);
+			if(\Email::mailer() instanceof Mailer) {
+				\Email::mailer()->eventful()->fire(Event::named('sendthis.blacklisted', \Email::mailer()), '', $fields['Email'], ['message' => _t('SendThis.BLACKLIST_BY_USER', 'Unsubscribe by user'), 'internal' => true], $fields);
+			}
 
             $response = [
                 'message' => _t(
@@ -147,7 +152,9 @@ class EmailSubscriptions extends \Controller {
 	function doUnblock($data, $form, $request) {
 		$fields = $form->Data;
 
-        \SendThis::fire('whitelisted', '', $fields['Email'], ['message' => _t('SendThis.WHITELIST_BY_USER', 'User has requested to be whitelisted'), 'internal' => true], $fields);
+		if(\Email::mailer() instanceof Mailer) {
+			\Email::mailer()->eventful()->fire(Event::named('sendthis.whitelisted', \Email::mailer()), '', $fields['Email'], ['message' => _t('SendThis.WHITELIST_BY_USER', 'User has requested to be whitelisted'), 'internal' => true], $fields);
+		}
 
         $response = [
             'message' => _t(

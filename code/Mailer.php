@@ -1,4 +1,5 @@
 <?php namespace Milkyway\SS\SendThis;
+use Milkyway\SS\SendThis\Events\Event;
 
 /**
  * Milkyway Multimedia
@@ -173,7 +174,7 @@ class Mailer extends \Mailer {
 	    if(isset($transports[$transport]) && isset($transports[$transport]['params']))
 		    $params = array_merge($params, (array)$transports[$transport]['params']);
 
-	    $this->transport = \Injector::inst()->createWithArgs($class, [$this->messenger, $this->eventful, $params]);
+	    $this->transport = \Injector::inst()->createWithArgs($class, [$this->messenger, $this, $params]);
 
         return $this->transport;
     }
@@ -183,7 +184,7 @@ class Mailer extends \Mailer {
 
         if($this->config()->logging) {
 		    $log = \SendThis_Log::create()->init($type, $headers);
-            $log->Transport = get_class($this->transport);
+            $log->Transport = get_class($this->transport());
         }
         else
             $log = null;
@@ -193,17 +194,17 @@ class Mailer extends \Mailer {
 
         $headers = (object) $headers;
 
-		$this->eventful->fire('sendthis.up', $messageId, $to, $params, $params, $log, $headers);
+		$this->eventful->fire(Event::named('sendthis.up', $this), $messageId, $to, $params, $params, $log, $headers);
 
         $headers = (array) $headers;
 
-        $this->transport->applyHeaders($headers);
+        $this->transport()->applyHeaders($headers);
 
 		$this->parser->setMessage($this->messenger);
 		$this->parser->setConfig($this->config());
-		$this->parser->parse($to, $from, $subject, $attachedFiles, $headers);
+		$message = $this->parser->parse($to, $from, $subject, $attachedFiles, $headers);
 
-		if($this->messenger) {
+		if($message) {
             $params['message'] = $this->messenger;
 
 			$this->messenger->Body = $type != 'html' ? strip_tags($content) : $content;
@@ -211,18 +212,18 @@ class Mailer extends \Mailer {
             if($type == 'html' || $plainContent)
 	            $this->messenger->AltBody = $plainContent ? $plainContent : strip_tags($content);
 
-			$this->eventful->fire('sendthis.sending', $messageId, $to, $params, $params, $log);
+			$this->eventful->fire(Event::named('sendthis.sending', $this), $messageId, $to, $params, $params, $log);
 
 			$this->messenger->isHTML($type == 'html');
 
 			try {
-				$result = $this->transport->start($this->messenger, $log);
+				$result = $this->transport()->start($this->messenger, $log);
 			} catch(\Exception $e) {
 				$result = $e->getMessage();
 
                 $params['message'] = $result;
 
-				$this->eventful->fire('sendthis.failed', $this->messenger->getLastMessageID() ?: $messageId, $to, $params, $params, $log);
+				$this->eventful->fire(Event::named('sendthis.failed', $this), $this->messenger->getLastMessageID() ?: $messageId, $to, $params, $params, $log);
 			}
 
 			if(!$result || $this->messenger->IsError())
@@ -235,10 +236,10 @@ class Mailer extends \Mailer {
 
         if($result !== true) {
             $params['message'] = $result;
-            $this->eventful->fire('sendthis.failed', $messageId, $to, $params, $params, $log);
+            $this->eventful->fire(Event::named('sendthis.failed', $this), $messageId, $to, $params, $params, $log);
         }
 
-		$this->eventful->fire('sendthis.down', $messageId, $to, $params, $params, $log);
+		$this->eventful->fire(Event::named('sendthis.down', $this), $messageId, $to, $params, $params, $log);
 
         $this->resetMessenger();
 
@@ -253,7 +254,11 @@ class Mailer extends \Mailer {
         return $this->send('plain', $to, $from, $subject, $plainContent, $attachedFiles, $headers);
     }
 
-	public function eventful() {
-		return $this->eventful;
-	}
+    public function eventful() {
+        return $this->eventful;
+    }
+
+    public function transport() {
+        return $this->transport;
+    }
 }
