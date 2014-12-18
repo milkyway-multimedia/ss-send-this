@@ -1,5 +1,7 @@
 <?php
 
+use \Milkyway\SS\SendThis\Mailer;
+
 /**
  * Milkyway Multimedia
  * SendThis_Log.php
@@ -146,7 +148,7 @@ class SendThis_Log extends DataObject {
             {
                 if ($emailsOnly)
                 {
-                    list($to, $name) = SendThis::split_email($r->To);
+                    list($to, $name) = Mailer::split_email($r->To);
                     $emails[$to] = htmlspecialchars($r->To);
                 } else
                 {

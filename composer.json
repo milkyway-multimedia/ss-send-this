@@ -20,7 +20,7 @@
 		"guzzlehttp/guzzle"                     : "~4",
 		"milkyway-multimedia/ss-hashable"       : "dev-master",
 		"milkyway-multimedia/ss-mwm"            : "dev-master",
-		"milkyway-multimedia/ss-events-handler" : "dev-master"
+		"milkyway-multimedia/ss-eventful" : "dev-master"
 	},
 	"repositories"      : [
 		{

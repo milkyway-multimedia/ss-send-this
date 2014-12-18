@@ -1,5 +1,7 @@
 <?php namespace Milkyway\SS\SendThis\Transports;
 
+use Milkyway\SS\Eventful\Contract as Eventful;
+
 /**
  * Milkyway Multimedia
  * SendThis_SMTP.php
@@ -8,28 +10,28 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class SMTP extends Mail {
-    public function __construct(\PHPMailer $messenger) {
+	public function __construct(\PHPMailer $messenger, Eventful $eventful, $params = []) {
+		parent::__construct($messenger, $eventful, $params);
+
         $messenger->isSMTP();
 
-        $config = SendThis::config();
+        if(isset($params['host']))
+            $messenger->Host = $params['host'];
 
-        if($config->host)
-            $messenger->Host = $config->host;
+		if(isset($params['port']))
+			$messenger->Port = $params['port'];
 
-        if($config->port)
-            $messenger->Port = $config->port;
+        $messenger->SMTPKeepAlive = isset($params['keep_alive']) ? (bool) $params['keep_alive'] : false;
 
-        $messenger->SMTPKeepAlive = (bool) $config->keep_alive;
-
-        if($config->username) {
+        if(isset($params['username'])) {
             $messenger->SMTPAuth = true;
-            $messenger->Username = $config->username;
+            $messenger->Username = $params['username'];
 
-            if($config->password)
-                $messenger->Password = $config->password;
+            if(isset($params['password']))
+                $messenger->Password = $params['password'];
 
-            if($config->secured_with)
-                $messenger->SMTPSecure = $config->secured_with;
+            if(isset($params['secured_with']))
+                $messenger->SMTPSecure = $params['secured_with'];
         }
     }
 }

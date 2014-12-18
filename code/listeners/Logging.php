@@ -98,11 +98,11 @@ class Logging {
         $params['message'] .= "\n\n" . print_r($response, true);
 
         if(!(substr($email, -strlen($base)) === $base)) {
-            $bounce = SendThis_Bounce::create();
+            $bounce = \SendThis_Bounce::create();
             $bounce->Email = $email;
             $bounce->Message = $params['message'];
 
-            if ((SendThis_Bounce::get()->filter('Email', $email)->count() + 1) >= $blacklistAfter || $permanent) {
+            if ((\SendThis_Bounce::get()->filter('Email', $email)->count() + 1) >= $blacklistAfter || $permanent) {
                 $message = "\n\n" . print_r($response, true);
                 $message = $permanent ? 'Permanent Bounce' . $message : 'Bounced too many times' . $message;
                 \SendThis::fire('spam', $messageId, $email, $params + ['message' => $message], $response);

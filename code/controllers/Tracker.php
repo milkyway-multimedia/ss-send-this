@@ -1,4 +1,7 @@
 <?php namespace Milkyway\SS\SendThis\Controllers;
+
+use Milkyway\SS\SendThis\Mailer;
+
 /**
  * Milkyway Multimedia
  * SendThis_Tracker.php
@@ -15,11 +18,13 @@ class Tracker extends \Controller {
             $id = \Convert::raw2sql($r->param('Slug'));
 
             if(($log = \SendThis_Log::get()->filter('Slug', $id)->first())) {
-                \SendThis::fire('opened', $log->MessageID, $log->To, ['IP' => $r->getIP()], [
-                        'Referrer' => isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null,
-                        'UserAgent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null,
-                    ], $log
-                );
+	            if(\Email::mailer() instanceof Mailer) {
+		            \Email::mailer()->eventful()->fire('opened', $log->MessageID, $log->To, ['IP' => $r->getIP()], [
+	                        'Referrer' => isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null,
+	                        'UserAgent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null,
+	                    ], $log
+	                );
+	            }
             }
         }
 

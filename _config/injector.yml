@@ -1,0 +1,17 @@
+---
+Name: sendthis-injector
+---
+Injector:
+  'Milkyway\SS\SendThis\Mailer':
+    constructor:
+      0: '%$Milkyway\SS\SendThis\PHPMailer'
+      1: '%$Milkyway\SS\SendThis\MessageParsers\Contract'
+      2: '%$Eventful'
+
+  'Milkyway\SS\SendThis\PHPMailer':
+    class: 'PHPMailer'
+    constructor:
+      0: true
+
+  'Milkyway\SS\SendThis\MessageParsers\Contract':
+    class: 'Milkyway\SS\SendThis\MessageParsers\Standard'

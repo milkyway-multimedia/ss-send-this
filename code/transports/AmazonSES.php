@@ -7,23 +7,15 @@
  * @package milkyway-multimedia/silverstripe-send-this
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
-class AmazonSES extends Mail {
-    protected $endpoint = 'https://email.{location}.amazonaws.com';
-    protected $location = 'us-east-1';
-
-    function __construct(\PHPMailer $messenger) {
-        parent::__construct($messenger);
-
-        if(\SendThis::config()->endpoint)
-            $this->endpoint = \SendThis::config()->endpoint;
-
-        if(\SendThis::config()->location)
-            $this->location = \SendThis::config()->location;
-    }
+class AmazonSes extends Mail {
+	protected $params = [
+		'endpoint' => 'https://email.{location}.amazonaws.com',
+		'location' => 'us-east-1',
+	];
 
     function start(\PHPMailer $messenger, \ViewableData $log = null)
     {
-        if(($key = \SendThis::config()->key) && ($secret = \SendThis::config()->secret)) {
+        if(isset($this->params['key']) && isset($this->params['secret'])) {
             if(!$messenger->PreSend())
                 return false;
 
@@ -37,7 +29,7 @@ class AmazonSES extends Mail {
                         'Date' => $date,
                         'Host' => str_replace(array('http://', 'https://'), '', $this->endpoint),
                         'Content-Type' => 'application/x-www-form-urlencoded',
-                        'X-Amzn-Authorization' => 'AWS3-HTTPS AWSAccessKeyId=' . urlencode($key) . ',Algorithm=HmacSHA256,Signature=' . base64_encode(hash_hmac('sha256', $date, $secret, true)),
+                        'X-Amzn-Authorization' => 'AWS3-HTTPS AWSAccessKeyId=' . urlencode($this->params['key']) . ',Algorithm=HmacSHA256,Signature=' . base64_encode(hash_hmac('sha256', $date, $this->params['secret'], true)),
                     ),
                     'body' => array(
                         'Action' => 'SendRawEmail',
@@ -49,7 +41,7 @@ class AmazonSES extends Mail {
             return $this->handleResponse($response, $messenger, $log);
         }
 
-        throw new \SendThis_Exception('Invalid credentials. Could not connect to Amazon SES');
+        throw new Exception('Invalid credentials. Could not connect to Amazon SES');
     }
 
     public function handleResponse(\GuzzleHttp\Message\ResponseInterface $response, $messenger = null, $log = null) {
@@ -76,7 +68,7 @@ class AmazonSES extends Mail {
         if($message) {
             $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
             $message .= 'Message: ' . $response->getReasonPhrase();
-            throw new \SendThis_Exception($message);
+            throw new Exception($message);
         }
 
         $messageId = '';
@@ -84,7 +76,7 @@ class AmazonSES extends Mail {
         if(($result = $results->SendRawEmailResult) && isset($result['MessageId']))
             $messageId = $result['MessageId'];
 
-        SendThis::fire('sent', $messageId, $messenger->getToAddresses(), $results, $results, $log);
+        $this->eventful->fire('sent', $messageId, $messenger->getToAddresses(), $results, $results, $log);
 
         return true;
     }
@@ -101,7 +93,7 @@ class AmazonSES extends Mail {
 
     protected function endpoint()
     {
-        return str_replace('{location}', $this->location, $this->endpoint);
+        return str_replace('{location}', $this->params['location'], $this->params['endpoint']);
     }
 
     function applyHeaders(array &$headers) {

@@ -4,16 +4,41 @@ After:
   - 'framework/*'
   - 'cms/*'
 ---
-EventDispatcher:
+Eventful:
   listeners:
-    SendThis:
-      'Milkyway\SS\SendThis\Listeners\Relations':
-        events: ['up']
-      'Milkyway\SS\SendThis\Listeners\Logging':
-        events: ['up', 'sent', 'failed', 'bounced', 'spam', 'rejected', 'blacklisted', 'whitelisted']
-      'Milkyway\SS\SendThis\Listeners\Notifications':
-        events: ['hooked', 'handled', 'up', 'failed', 'rejected', 'bounced', 'spam']
-      'Milkyway\SS\SendThis\Listeners\Tracking':
-        events: ['up', 'sending', 'opened', 'clicked']
-      'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking':
-        events: ['up', 'sending', 'opened', 'clicked']
+    'sendthis.blacklisted':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+    'sendthis.bounced':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Notifications'
+    'sendthis.clicked':
+      - 'Milkyway\SS\SendThis\Listeners\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
+    'sendthis.up':
+      - 'Milkyway\SS\SendThis\Listeners\Relations'
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
+    'sendthis.failed':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Notifications'
+    'sendthis.handled':
+      - 'Milkyway\SS\SendThis\Listeners\Notifications'
+    'sendthis.hooked':
+      - 'Milkyway\SS\SendThis\Listeners\Notifications'
+    'sendthis.opened':
+      - 'Milkyway\SS\SendThis\Listeners\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
+    'sendthis.rejected':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Notifications'
+    'sendthis.sending':
+          - 'Milkyway\SS\SendThis\Listeners\Tracking'
+          - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
+    'sendthis.sent':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+    'sendthis.spam':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Notifications'
+    'sendthis.whitelisted':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'

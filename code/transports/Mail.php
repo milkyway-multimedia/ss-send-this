@@ -1,6 +1,6 @@
 <?php namespace Milkyway\SS\SendThis\Transports;
 
-use Milkyway\SS\SendThis\Contracts\Transport;
+use Milkyway\SS\Eventful\Contract as Eventful;
 
 /**
  * Milkyway Multimedia
@@ -9,10 +9,14 @@ use Milkyway\SS\SendThis\Contracts\Transport;
  * @package milkyway-multimedia/silverstripe-send-this
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
-class Mail implements Transport {
-    public function __construct(\PHPMailer $messenger) {
+class Mail implements Contract {
+	protected $eventful;
+	protected $params = [];
+
+    public function __construct(\PHPMailer $messenger, Eventful $eventful, $params = []) {
         $messenger->isMail();
-        return $messenger;
+	    $this->eventful = $eventful;
+	    $this->params = array_merge($this->params, $params);
     }
 
     function start(\PHPMailer $messenger, \ViewableData $log = null)
@@ -21,9 +25,9 @@ class Mail implements Transport {
             $response = compact($success, $to, $cc, $bcc, $subject, $body, $from);
 
             if($success)
-                SendThis::fire('sent', $messenger->getLastMessageID(), $to, $response, $response, $log);
+                $this->eventful->fire('sent', $messenger->getLastMessageID(), $to, $response, $response, $log);
             else
-                throw new \SendThis_Exception('Message not successfully sent' . "\n\n" . nl2br(print_r($response, true)));
+                throw new Exception('Message not successfully sent' . "\n\n" . nl2br(print_r($response, true)));
         };
 
         $messenger->send();

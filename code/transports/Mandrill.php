@@ -8,22 +8,14 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 class Mandrill extends Mail {
-    protected $endpoint = 'https://mandrillapp.com/api/1.0';
-
-    protected $async = false;
-    protected $sendAt;
-    protected $returnPathDomain;
-
-    function __construct(\PHPMailer $messenger) {
-        parent::__construct($messenger);
-
-        if(\SendThis::config()->endpoint)
-            $this->endpoint = \SendThis::config()->endpoint;
-    }
+	protected $params = [
+		'endpoint' => 'https://mandrillapp.com/api/1.0',
+		'async' => true,
+	];
 
     function start(\PHPMailer $messenger, \ViewableData $log = null)
     {
-        if(($key = \SendThis::config()->key)) {
+        if(isset($this->params['key'])) {
             if(!$messenger->PreSend())
                 return false;
 
@@ -34,9 +26,9 @@ class Mandrill extends Mail {
                         'User-Agent' => $userAgent,
                     ],
                     'body' => [
-                        'key' => $key,
+                        'key' => $this->params['key'],
                         'raw_message' => $messenger->GetSentMIMEMessage(),
-                        'async' => $this->async,
+                        'async' => $this->params['async'],
                     ],
                 ]
             );
@@ -44,7 +36,7 @@ class Mandrill extends Mail {
             return $this->handleResponse($response, $messenger, $log);
         }
 
-        throw new \SendThis_Exception('Invalid API Key. Could not connect to Mandrill.');
+        throw new Exception('Invalid API Key. Could not connect to Mandrill.');
     }
 
     public function handleResponse(\GuzzleHttp\Message\ResponseInterface $response, $messenger = null, $log = null) {
@@ -77,10 +69,10 @@ class Mandrill extends Mail {
 
                 $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
                 $message .= 'Message: ' . $response->getReasonPhrase();
-                throw new \SendThis_Exception($message);
+                throw new Exception($message);
             }
 
-            \SendThis::fire('sent', $messageId ? $messageId : $messenger->getLastMessageID(), $email, $results, $results, $log);
+            $this->eventful->fire('sent', $messageId ? $messageId : $messenger->getLastMessageID(), $email, $results, $results, $log);
         }
 
         return true;
@@ -98,44 +90,38 @@ class Mandrill extends Mail {
 
     protected function endpoint($action = '')
     {
-        return \Controller::join_links($this->endpoint, $action . '.json');
+        return \Controller::join_links($this->params['endpoint'], $action . '.json');
     }
 
     public function applyHeaders(array &$headers) {
         if(isset($headers['X-SendAt'])) {
-            $this->sendAt = $headers['X-SendAt'];
+            $this->params['sendAt'] = $headers['X-SendAt'];
             unset($headers['X-SendAt']);
         }
 
         if(array_key_exists('X-Async', $headers)) {
-            $this->async = $headers['X-Async'];
+	        $this->params['async'] = $headers['X-Async'];
             unset($headers['X-Async']);
         }
 
         if(array_key_exists('X-ReturnPathDomain', $headers)) {
-            $this->returnPathDomain = $headers['X-ReturnPathDomain'];
+	        $this->params['returnPathDomain'] = $headers['X-ReturnPathDomain'];
             unset($headers['X-ReturnPathDomain']);
         }
 
-        if(!isset($headers['X-MC-Track'])) {
-            if(\SendThis::config()->tracking || \SendThis::config()->api_tracking) {
-                $headers['X-MC-Track'] = 'opens,clicks_htmlonly';
-            }
-        }
-
-        $mandrill = \SendThis::config()->mandrill;
-
-        if($mandrill && count($mandrill)) {
-            foreach($mandrill as $setting => $value) {
-                $header = 'X-MC-' . $setting;
-
+        if(isset($this->params['headers'])) {
+            foreach((array)$this->params['headers'] as $header => $value) {
                 if(!isset($headers[$header]))
                     $headers[$header] = $value;
             }
         }
 
-        if(\SendThis::config()->sub_account)
-            $headers['X-MC-Subaccount'] = \SendThis::config()->sub_account;
+	    if(!isset($headers['X-MC-Track']) && (isset($this->params['tracking']) || isset($this->params['api_tracking']))) {
+		    $headers['X-MC-Track'] = 'opens,clicks_htmlonly';
+	    }
+
+        if(isset($this->params['sub_account']))
+            $headers['X-MC-Subaccount'] = $this->params['sub_account'];
         elseif(isset($_ENV['mandrill_sub_account']))
             $headers['X-MC-Subaccount'] = $_ENV['mandrill_sub_account'];
         elseif($sub = getenv('mandrill_sub_account'))
