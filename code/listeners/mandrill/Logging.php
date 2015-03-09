@@ -12,6 +12,6 @@ use Milkyway\SS\SendThis\Transports\Mandrill;
 
 class Logging extends \Milkyway\SS\SendThis\Listeners\Logging {
 	protected function allowed(\Object $mailer) {
-		return !$mailer->config()->api_tracking && ($mailer instanceof Mailer) && ($mailer->transport() instanceof Mandrill);
+		return !parent::allowed($mailer) && $mailer->config()->api_tracking && ($mailer instanceof Mailer) && ($mailer->transport() instanceof Mandrill);
 	}
 } 

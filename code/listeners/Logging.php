@@ -199,6 +199,6 @@ class Logging {
     }
 
 	protected function allowed(\Object $mailer) {
-		return !$mailer->config()->logging;
+		return $mailer->config()->logging && !$mailer->config()->api_tracking;
 	}
 } 
