@@ -1,0 +1,22 @@
+---
+Name: send-this--settings
+---
+SendThis:
+  transports:
+    default:
+      driver: default
+
+  drivers:
+    default:
+      class: 'Milkyway\SS\SendThis\Transports\Mail'
+    smtp:
+      class: 'Milkyway\SS\SendThis\Transports\SMTP'
+    ses:
+      class: 'Milkyway\SS\SendThis\Transports\AmazonSES'
+    mandrill:
+      class: 'Milkyway\SS\SendThis\Transports\Mandrill'
+
+  logging: false
+  api_tracking: true
+  from_same_domain_only: true
+  blacklist_after_bounced: 2

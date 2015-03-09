@@ -117,7 +117,7 @@ class EmailSubscriptions extends \Controller {
 
 		if(!\SendThis_Blacklist::get()->filter('Email', $fields['Email'])->exists()) {
 			if(\Email::mailer() instanceof Mailer) {
-				\Email::mailer()->eventful()->fire(Event::named('sendthis.blacklisted', \Email::mailer()), '', $fields['Email'], ['message' => _t('SendThis.BLACKLIST_BY_USER', 'Unsubscribe by user'), 'internal' => true], $fields);
+				\Email::mailer()->eventful()->fire(Event::named('sendthis:blacklisted', \Email::mailer()), '', $fields['Email'], ['message' => _t('SendThis.BLACKLIST_BY_USER', 'Unsubscribe by user'), 'internal' => true], $fields);
 			}
 
             $response = [
@@ -153,7 +153,7 @@ class EmailSubscriptions extends \Controller {
 		$fields = $form->Data;
 
 		if(\Email::mailer() instanceof Mailer) {
-			\Email::mailer()->eventful()->fire(Event::named('sendthis.whitelisted', \Email::mailer()), '', $fields['Email'], ['message' => _t('SendThis.WHITELIST_BY_USER', 'User has requested to be whitelisted'), 'internal' => true], $fields);
+			\Email::mailer()->eventful()->fire(Event::named('sendthis:whitelisted', \Email::mailer()), '', $fields['Email'], ['message' => _t('SendThis.WHITELIST_BY_USER', 'User has requested to be whitelisted'), 'internal' => true], $fields);
 		}
 
         $response = [

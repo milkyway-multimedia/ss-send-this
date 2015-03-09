@@ -64,8 +64,8 @@ class Mandrill extends \Controller
 				$event = $this->eventMapping[$event];
 
 			if(\Email::mailer() instanceof Mailer) {
-				\Email::mailer()->eventful()->fire(Event::named('sendthis.' . $event, \Email::mailer()), $messageId, $email, $params, $response);
-				\Email::mailer()->eventful()->fire(Event::named('sendthis.handled', \Email::mailer()), $event, $request);
+				\Email::mailer()->eventful()->fire(Event::named('sendthis:' . $event, \Email::mailer()), $messageId, $email, $params, $response);
+				\Email::mailer()->eventful()->fire(Event::named('sendthis:handled', \Email::mailer()), $event, $request);
 			}
 		}
 
@@ -81,7 +81,7 @@ class Mandrill extends \Controller
 	protected function confirmSubscription($message)
 	{
 		if(\Email::mailer() instanceof Mailer) {
-			\Email::mailer()->eventful()->fire(Event::named('sendthis.hooked', \Email::mailer()), '', '', ['subject' => 'Subscribed to Mandrill Web Hook', 'message' => $message]);
+			\Email::mailer()->eventful()->fire(Event::named('sendthis:hooked', \Email::mailer()), '', '', ['subject' => 'Subscribed to Mandrill Web Hook', 'message' => $message]);
 		}
 
 		return new \SS_HTTPResponse('', 200, 'success');

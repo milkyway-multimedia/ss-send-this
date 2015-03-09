@@ -13,7 +13,7 @@ use Milkyway\SS\SendThis\Events\Event;
  */
 class Logging {
     public function up(Event $e, $messageId, $email, $params, $response, $log, $headers) {
-        if (!$e->mailer()->config()->logging) return;
+        if (!$this->allowed($e->mailer())) return;
 
         if($log) {
             $log->To      = $params['to'];
@@ -197,4 +197,8 @@ class Logging {
 
         $log->write();
     }
+
+	protected function allowed(\Object $mailer) {
+		return !$mailer->config()->logging;
+	}
 } 

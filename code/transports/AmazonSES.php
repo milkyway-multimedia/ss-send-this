@@ -77,7 +77,7 @@ class AmazonSes extends Mail {
         if(($result = $results->SendRawEmailResult) && isset($result['MessageId']))
             $messageId = $result['MessageId'];
 
-        $this->mailer->eventful()->fire(Event::named('sendthis.sent', $this->mailer), $messageId, $messenger->getToAddresses(), $results, $results, $log);
+        $this->mailer->eventful()->fire(Event::named('sendthis:sent', $this->mailer), $messageId, $messenger->getToAddresses(), $results, $results, $log);
 
         return true;
     }

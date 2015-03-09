@@ -1,5 +1,7 @@
 <?php namespace Milkyway\SS\SendThis\Listeners\Mandrill;
 use Milkyway\SS\SendThis\Events\Event;
+use Milkyway\SS\SendThis\Mailer;
+use Milkyway\SS\SendThis\Transports\Mandrill;
 
 /**
  * Milkyway Multimedia
@@ -11,7 +13,7 @@ use Milkyway\SS\SendThis\Events\Event;
 
 class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
     public function opened(Event $e, $messageId = '', $email = '', $params = [], $response = [], $log = null) {
-        if (!$e->mailer()->config()->api_tracking) return;
+        if (!$this->allowed($e->mailer())) return;
         $logs = null;
 
         if($messageId)
@@ -38,7 +40,7 @@ class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
     }
 
     public function clicked(Event $e, $messageId = '', $email = '', $params = [], $response = [], $link = null) {
-        if (!$e->mailer()->config()->api_tracking) return;
+	    if (!$this->allowed($e->mailer())) return;
 
         if(isset($response['url']) && $messageId) {
             $logs = \SendThis_Log::get()->filter('MessageID', $messageId)->sort('Created', 'DESC');
@@ -50,6 +52,13 @@ class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
                 $link = $log->Links()->filter('Original', $response['url'])->first();
                 if($link) break;
             }
+
+	        if (!$link) {
+		        $link           = \SendThis_Link::create();
+		        $link->Original = $response['url'];
+		        $link->LogID    = $logs->first()->ID;
+		        $link->write();
+	        }
 
             if($link) {
                 if (! \Cookie::get('tracking-email-link-' . $link->Slug))
@@ -144,4 +153,8 @@ class Tracking extends \Milkyway\SS\SendThis\Listeners\Tracking {
 
         return $tracked;
     }
+
+	protected function allowed(\Object $mailer) {
+		return !$mailer->config()->api_tracking && ($mailer instanceof Mailer) && ($mailer->transport() instanceof Mandrill);
+	}
 } 

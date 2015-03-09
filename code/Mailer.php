@@ -10,42 +10,6 @@ use Milkyway\SS\SendThis\Events\Event;
  */
 
 class Mailer extends \Mailer {
-	/** @var array A map for the transports you can use with SendThis */
-	private static $transports = [
-		'default' => [
-			'driver' => 'default',
-		],
-	];
-
-    /** @var array Default settings for drivers you can use with SendThis */
-    private static $drivers = [
-        'default' => [
-	        'class' => '\Milkyway\SS\SendThis\Transports\Mail',
-	    ],
-        'smtp' => [
-	        'class' => '\Milkyway\SS\SendThis\Transports\SMTP',
-	    ],
-        'ses' => [
-	        'class' => '\Milkyway\SS\SendThis\Transports\AmazonSES',
-	    ],
-        'mandrill' => [
-	        'class' => '\Milkyway\SS\SendThis\Transports\Mandrill',
-	    ],
-    ];
-
-    /** @var bool Whether to enabled logging for this application */
-    private static $logging = false;
-
-    /** @var bool Whether to enable api tracking for this application */
-    private static $api_tracking = true;
-
-    /** @var bool|string Only allow emails from a certain domain
-     * (you can also enter an email here to override the From Address) */
-    private static $from_same_domain_only = true;
-
-    /** @var int After how many soft bounces do we blacklist */
-    private static $blacklist_after_bounced = 2;
-
     /**
      * Send an email immediately, with ability to provide a callback and alternate transport
      *
@@ -140,7 +104,6 @@ class Mailer extends \Mailer {
         $this->messenger = $messenger;
         $this->parser = $parser;
         $this->eventful = $eventful;
-	    $this->setTransport();
     }
 
     protected function resetMessenger(){
@@ -162,17 +125,15 @@ class Mailer extends \Mailer {
 
 	    $class = isset($drivers[$driver]) && isset($drivers[$driver]['class']) ? $drivers[$driver]['class'] : $driver;
 
-	    $params = (array)$this->config();
-
-	    foreach(['transport', 'drivers', 'transports'] as $notAllowed) {
-		    if(isset($params[$notAllowed]))
-			    unset($params[$notAllowed]);
-	    }
+	    $params = (array)$this->config()->params;
 
 	    if(isset($drivers[$driver]) && isset($drivers[$driver]['params']))
 		    $params = array_merge($params, (array)$drivers[$driver]['params']);
 	    if(isset($transports[$transport]) && isset($transports[$transport]['params']))
 		    $params = array_merge($params, (array)$transports[$transport]['params']);
+
+	    if(!isset($params['key']) && singleton('env')->get($driver.'|SendThis.key'))
+		    $params['key'] = singleton('env')->get($driver.'|SendThis.key');
 
 	    $this->transport = \Injector::inst()->createWithArgs($class, [$this->messenger, $this, $params]);
 
@@ -182,7 +143,7 @@ class Mailer extends \Mailer {
 	public function send($type = 'html', $to, $from, $subject, $content, $attachedFiles = null, $headers = null, $plainContent = null) {
         $this->resetMessenger();
 
-        if($this->config()->logging) {
+        if(singleton('env')->get('SendThis.logging')) {
 		    $log = \SendThis_Log::create()->init($type, $headers);
             $log->Transport = get_class($this->transport());
         }
@@ -194,7 +155,7 @@ class Mailer extends \Mailer {
 
         $headers = (object) $headers;
 
-		$this->eventful->fire(Event::named('sendthis.up', $this), $messageId, $to, $params, $params, $log, $headers);
+		$this->eventful->fire(Event::named('sendthis:up', $this), $messageId, $to, $params, $params, $log, $headers);
 
         $headers = (array) $headers;
 
@@ -212,7 +173,7 @@ class Mailer extends \Mailer {
             if($type == 'html' || $plainContent)
 	            $this->messenger->AltBody = $plainContent ? $plainContent : strip_tags($content);
 
-			$this->eventful->fire(Event::named('sendthis.sending', $this), $messageId, $to, $params, $params, $log);
+			$this->eventful->fire(Event::named('sendthis:sending', $this), $messageId, $to, $params, $params, $log);
 
 			$this->messenger->isHTML($type == 'html');
 
@@ -223,7 +184,7 @@ class Mailer extends \Mailer {
 
                 $params['message'] = $result;
 
-				$this->eventful->fire(Event::named('sendthis.failed', $this), $this->messenger->getLastMessageID() ?: $messageId, $to, $params, $params, $log);
+				$this->eventful->fire(Event::named('sendthis:failed', $this), $this->messenger->getLastMessageID() ?: $messageId, $to, $params, $params, $log);
 			}
 
 			if(!$result || $this->messenger->IsError())
@@ -236,10 +197,10 @@ class Mailer extends \Mailer {
 
         if($result !== true) {
             $params['message'] = $result;
-            $this->eventful->fire(Event::named('sendthis.failed', $this), $messageId, $to, $params, $params, $log);
+            $this->eventful->fire(Event::named('sendthis:failed', $this), $messageId, $to, $params, $params, $log);
         }
 
-		$this->eventful->fire(Event::named('sendthis.down', $this), $messageId, $to, $params, $params, $log);
+		$this->eventful->fire(Event::named('sendthis:down', $this), $messageId, $to, $params, $params, $log);
 
         $this->resetMessenger();
 
@@ -259,6 +220,13 @@ class Mailer extends \Mailer {
     }
 
     public function transport() {
+	    if(!$this->transport)
+		    $this->setTransport();
+
         return $this->transport;
     }
+
+	static public function config() {
+		return \Config::inst()->forClass('SendThis');
+	}
 }

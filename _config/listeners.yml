@@ -6,39 +6,46 @@ After:
 ---
 Eventful:
   listeners:
-    'sendthis.blacklisted':
+    'sendthis:blacklisted.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-    'sendthis.bounced':
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
+    'sendthis:bounced.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
-    'sendthis.clicked':
+    'sendthis:clicked.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Tracking'
       - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
-    'sendthis.up':
+    'sendthis:up.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Relations'
       - 'Milkyway\SS\SendThis\Listeners\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Tracking'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
-    'sendthis.failed':
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
+    'sendthis:failed.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
-    'sendthis.handled':
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
+    'sendthis:handled.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
-    'sendthis.hooked':
+    'sendthis:hooked.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
-    'sendthis.opened':
+    'sendthis:opened.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Tracking'
       - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
-    'sendthis.rejected':
+    'sendthis:rejected.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
-    'sendthis.sending':
-          - 'Milkyway\SS\SendThis\Listeners\Tracking'
-          - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
-    'sendthis.sent':
+    'sendthis:sending.sendthis:default':
+      - 'Milkyway\SS\SendThis\Listeners\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
+    'sendthis:sent.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-    'sendthis.spam':
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
+    'sendthis:spam.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
-    'sendthis.whitelisted':
+    'sendthis:whitelisted.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'

@@ -38,7 +38,7 @@ class AmazonSes extends \Controller {
 			}
 
 			if(\Email::mailer() instanceof Mailer) {
-				\Email::mailer()->eventful()->fire(Event::named('sendthis.handled', \Email::mailer()), $data->Type, $request);
+				\Email::mailer()->eventful()->fire(Event::named('sendthis:handled', \Email::mailer()), $data->Type, $request);
 			}
 		}
 
@@ -53,7 +53,7 @@ class AmazonSes extends \Controller {
 
 	protected function confirmSubscription($url, $message = '') {
 		if(\Email::mailer() instanceof Mailer) {
-			\Email::mailer()->eventful()->fire(Event::named('sendthis.hooked', \Email::mailer()), '', '', ['subject' => 'Subscribed to Amazon SNS', 'message' => $message]);
+			\Email::mailer()->eventful()->fire(Event::named('sendthis:hooked', \Email::mailer()), '', '', ['subject' => 'Subscribed to Amazon SNS', 'message' => $message]);
 		}
 
 		return file_get_contents($url);
@@ -83,7 +83,7 @@ class AmazonSes extends \Controller {
 						$message = 'Bounced';
 
 					if(\Email::mailer() instanceof Mailer) {
-						\Email::mailer()->eventful()->fire(Event::named('sendthis.bounced', \Email::mailer()), $messageId, $bounce['emailAddress'], ['permanent' => $permanent, 'message' => $message, 'details' => $bounce], $response);
+						\Email::mailer()->eventful()->fire(Event::named('sendthis:bounced', \Email::mailer()), $messageId, $bounce['emailAddress'], ['permanent' => $permanent, 'message' => $message, 'details' => $bounce], $response);
 					}
 				}
 			}
@@ -104,7 +104,7 @@ class AmazonSes extends \Controller {
 					);
 
 					if(\Email::mailer() instanceof Mailer) {
-						\Email::mailer()->eventful()->fire(Event::named('sendthis.spam', \Email::mailer()), $messageId, $complaint['emailAddress'], ['blacklist' => true, 'details' => $complaint, 'message' => $message], $response);
+						\Email::mailer()->eventful()->fire(Event::named('sendthis:spam', \Email::mailer()), $messageId, $complaint['emailAddress'], ['blacklist' => true, 'details' => $complaint, 'message' => $message], $response);
 					}
 				}
 			}
@@ -118,7 +118,7 @@ class AmazonSes extends \Controller {
 			foreach($recipients as $recipient) {
 				$messageId = isset($response['mail']) && isset($response['mail']['messageId']) ? $response['mail']['messageId'] : '';
 				if(\Email::mailer() instanceof Mailer) {
-					\Email::mailer()->eventful()->fire(Event::named('sendthis.delivered', \Email::mailer()), $messageId, $recipient, [
+					\Email::mailer()->eventful()->fire(Event::named('sendthis:delivered', \Email::mailer()), $messageId, $recipient, [
 						'details' => $response['delivery'],
 						'timestamp' => isset($response['delivery']['timestamp']) ? time($response['delivery']['timestamp']) : ''
 					], $response
