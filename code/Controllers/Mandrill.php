@@ -32,40 +32,16 @@ class Mandrill extends \Controller
 		if ($request->isHEAD()) {
 			return $this->confirmSubscription($request->getBody());
 		} else {
-			$response = json_decode($request->getBody(), true);
-			$event = isset($response['event']) ? $response['event'] : 'unknown';
-			$messageId = '';
-			$email = '';
+			$response = $request->isPOST() ? $request->postVars() : json_decode($request->getBody(), true);
 
-			$params = [
-				'details'   => isset($response['msg']) ? $response['msg'] : [],
-				'timestamp' => isset($response['ts']) ? $response['ts'] : '',
-			];
-
-			if (count($params['details'])) {
-				if (isset($params['details']['_id'])) {
-					$messageId = $params['details']['_id'];
-				}
-
-				if (isset($params['details']['email'])) {
-					$email = $params['details']['email'];
+			if(isset($response['mandrill_events'])) {
+				$response['mandrill_events'] = json_decode($response['mandrill_events'], true);
+				foreach($response['mandrill_events'] as $event) {
+					$this->handleEvent($event, $request);
 				}
 			}
-
-			if (!$messageId && isset($response['_id'])) {
-				$messageId = $response['_id'];
-			}
-
-			if ($event == 'hard_bounce') {
-				$params['permanent'] = true;
-			}
-
-			if (isset($this->eventMapping[$event]))
-				$event = $this->eventMapping[$event];
-
-			if(\Email::mailer() instanceof Mailer) {
-				\Email::mailer()->eventful()->fire(Event::named('sendthis:' . $event, \Email::mailer()), $messageId, $email, $params, $response);
-				\Email::mailer()->eventful()->fire(Event::named('sendthis:handled', \Email::mailer()), $event, $request);
+			else {
+				$this->handleEvent($response, $request);
 			}
 		}
 
@@ -96,5 +72,47 @@ class Mandrill extends \Controller
 		}
 
 		return $templates;
+	}
+
+	/**
+	 * @param $eventParams
+	 * @param $request
+	 */
+	protected function handleEvent($eventParams, $request = null)
+	{
+		$event = isset($eventParams['event']) ? $eventParams['event'] : 'unknown';
+		$messageId = '';
+		$email = '';
+
+		$params = [
+			'details' => isset($eventParams['msg']) ? $eventParams['msg'] : [],
+			'timestamp' => isset($eventParams['ts']) ? $eventParams['ts'] : '',
+		];
+
+		if (count($params['details'])) {
+			if (isset($params['details']['_id'])) {
+				$messageId = $params['details']['_id'];
+			}
+
+			if (isset($params['details']['email'])) {
+				$email = $params['details']['email'];
+			}
+		}
+
+		if (!$messageId && isset($eventParams['_id'])) {
+			$messageId = $eventParams['_id'];
+		}
+
+		if ($event == 'hard_bounce') {
+			$params['permanent'] = true;
+		}
+
+		if (isset($this->eventMapping[$event]))
+			$event = $this->eventMapping[$event];
+
+		if (\Email::mailer() instanceof Mailer) {
+			\Email::mailer()->eventful()->fire(Event::named('sendthis:' . $event, \Email::mailer()), $messageId, $email, $params, $eventParams);
+			\Email::mailer()->eventful()->fire(Event::named('sendthis:handled', \Email::mailer()), $event, $request, $eventParams);
+		}
 	}
 } 

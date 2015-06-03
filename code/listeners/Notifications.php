@@ -18,7 +18,7 @@ class Notifications {
         }
     }
 
-    public function hooked(Event $e, $messageId, $email, $params, $response) {
+    public function hooked(Event $e, $messageId, $email, $params, $response = null) {
         if($e->mailer()->config()->debugging && $email = \Email::config()->admin_email) {
             $originalSMTP = ini_get('SMTP');
 
@@ -37,7 +37,7 @@ class Notifications {
         }
     }
 
-	public function handled(Event $e, $event, $request) {
+	public function handled(Event $e, $event, $request = null, $params = null) {
 		if($email = getenv('sendthis_notify_on_webhook_events')) {
 			$originalSMTP = ini_get('SMTP');
 
@@ -47,7 +47,8 @@ class Notifications {
 			mail(
 				$email,
 				'Web hook called for event: ' . $event,
-				print_r($request, true),
+				'<h1>Params</h1><pre>' . print_r($params, true) . '</pre><br><br>' .
+				'<h2>Request</h2><pre>' . print_r($request, true) . '</pre>',
 				"Content-type: text/html\nFrom: " . $email
 			);
 
