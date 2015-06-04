@@ -16,7 +16,7 @@ SendThis:
     mandrill:
       class: 'Milkyway\SS\SendThis\Transports\Mandrill'
 
-  logging: true
+  logging: false
   api_tracking: true
   from_same_domain_only: true
   blacklist_after_bounced: 2

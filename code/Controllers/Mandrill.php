@@ -27,6 +27,11 @@ class Mandrill extends \Controller
 		'blacklist'   => 'blacklisted',
 	];
 
+	protected $syncEvents = [
+		'blacklist',
+		'whitelist',
+	];
+
 	public function index($request)
 	{
 		if ($request->isHEAD()) {
@@ -81,6 +86,10 @@ class Mandrill extends \Controller
 	protected function handleEvent($eventParams, $request = null)
 	{
 		$event = isset($eventParams['event']) ? $eventParams['event'] : 'unknown';
+
+		if(isset($eventParams['type']) && in_array($eventParams['type'], $this->syncEvents))
+			$event = $eventParams['type'];
+
 		$messageId = '';
 		$email = '';
 
@@ -88,6 +97,13 @@ class Mandrill extends \Controller
 			'details' => isset($eventParams['msg']) ? $eventParams['msg'] : [],
 			'timestamp' => isset($eventParams['ts']) ? $eventParams['ts'] : '',
 		];
+
+		if(!isset($eventParams['msg'])) {
+			if(isset($eventParams['reject']))
+				$params['details'] = $eventParams['reject'];
+			else if(isset($eventParams['entry']))
+				$params['details'] = $eventParams['entry'];
+		}
 
 		if (count($params['details'])) {
 			if (isset($params['details']['_id'])) {
@@ -105,6 +121,10 @@ class Mandrill extends \Controller
 
 		if ($event == 'hard_bounce') {
 			$params['permanent'] = true;
+		}
+
+		if($event == 'blacklist' && isset($eventParams['action']) && $eventParams['action'] != 'add') {
+			$event = 'whitelist';
 		}
 
 		if (isset($this->eventMapping[$event]))

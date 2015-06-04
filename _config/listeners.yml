@@ -9,6 +9,9 @@ Eventful:
     'sendthis:blacklisted.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
+    'sendthis:unsubscribed.sendthis:default':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
     'sendthis:bounced.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'

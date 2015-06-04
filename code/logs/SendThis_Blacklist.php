@@ -57,7 +57,11 @@ class SendThis_Blacklist extends DataObject {
     }
 
     public static function log_invalid($email, $message = '', $valid = false) {
-        $blacklist = static::create();
+        $blacklist = static::get()->filter(['Email' => $email])->first();
+
+        if(!$blacklist)
+            $blacklist = static::create();
+
         $blacklist->Email = $email;
         $blacklist->Message = $message;
         $blacklist->Valid = $valid;
