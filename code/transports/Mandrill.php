@@ -70,6 +70,7 @@ class Mandrill extends Mail {
 
                 $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
                 $message .= 'Message: ' . $response->getReasonPhrase();
+                $this->mailer->eventful()->fire(Event::named('sendthis:failed', $this->mailer), $messageId, $email, $results, $results, $log);
                 throw new Exception($message);
             }
 

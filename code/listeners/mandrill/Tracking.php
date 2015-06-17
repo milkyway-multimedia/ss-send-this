@@ -93,7 +93,7 @@ class Tracking extends Tracking_Default {
                 'ClientLink' => $this->checkIfKeyExistsAndReturnValue('ua_url', $response['user_agent_parsed']),
                 'ClientCompany' => $this->checkIfKeyExistsAndReturnValue('ua_company', $response['user_agent_parsed']),
                 'ClientCompanyLink' => $this->checkIfKeyExistsAndReturnValue('ua_company_url', $response['user_agent_parsed']),
-                'ClientIcon' => $this->checkIfKeyExistsAndReturnValue('ua_icon', $response['user_agent_parsed']),
+                'Icon' => $this->checkIfKeyExistsAndReturnValue('ua_icon', $response['user_agent_parsed']),
 
                 'OperatingSystemBrand' => $this->checkIfKeyExistsAndReturnValue('os_family', $response['user_agent_parsed']),
                 'OperatingSystem' => $this->checkIfKeyExistsAndReturnValue('os_name', $response['user_agent_parsed']),

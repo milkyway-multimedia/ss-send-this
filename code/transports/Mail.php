@@ -27,8 +27,10 @@ class Mail implements Contract {
 
             if($success)
                 $this->mailer->eventful()->fire(Event::named('sendthis:sent', $this->mailer), $messenger->getLastMessageID(), $to, $response, $response, $log);
-            else
+            else {
+                $this->mailer->eventful()->fire(Event::named('sendthis:failed', $this->mailer), $messenger->getLastMessageID(), $to, $response, $response, $log);
                 throw new Exception('Message not successfully sent' . "\n\n" . nl2br(print_r($response, true)));
+            }
         };
 
         $messenger->send();

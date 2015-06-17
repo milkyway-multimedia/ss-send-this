@@ -113,7 +113,7 @@ class Logging {
 
                 $e->mailer()->eventful()->fire(
                     Event::named('sendthis:spam', $e->mailer()),
-                    $messageId,
+                    $messageId  ,
                     $email,
                     array_merge($params, ['message' => $message, 'valid_email' => false]),
                     $response

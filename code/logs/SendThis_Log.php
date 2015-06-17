@@ -79,6 +79,22 @@ class SendThis_Log extends DataObject {
 
     private static $default_sort = 'Created DESC';
 
+    protected $excludeFromTrackerReports = [
+        'Icon',
+        'ClientBrand',
+        'ClientIcon',
+        'ClientLink',
+        'ClientCompany',
+        'ClientCompanyLink',
+        'CountryCode',
+
+        'OperatingSystemIcon',
+        'OperatingSystemBrand',
+        'OperatingSystemLink',
+        'OperatingSystemCompany',
+        'OperatingSystemCompanyLink',
+    ];
+
     /**
      * Find the recent emails sent by a member and/or email
      *
@@ -350,7 +366,7 @@ class SendThis_Log extends DataObject {
 
             if (($tracker = $this->Tracker) && count($tracker))
             {
-                $exclude = array('OperatingSystem', 'Client', 'Icon', 'OperatingSystemIcon');
+                $exclude = $this->excludeFromTrackerReports;
 
                 if (! $full)
                 {
@@ -359,13 +375,19 @@ class SendThis_Log extends DataObject {
 
                 foreach ($tracker as $title => $value)
                 {
-                    if ($title == 'ClientFull')
+                    if ($title == 'Client')
                     {
+                        $formattedValue = isset($tracker['Icon']) ? '<img src="' . $tracker['Icon'] . '" alt="" class="icon-tiny" /> ' . $this->getClientFromTracker($value, $tracker) : $this->getClientFromTracker($value, $tracker);
+
+                        if(isset($tracker['ClientLink'])) {
+                            $formattedValue = '<a href="' . $tracker['ClientLink'] . '" target="_blank">' . $formattedValue . '</a>';
+                        }
+
                         $output->push(
                             ArrayData::create(
                                 array(
                                     'Title'          => _t('SendThis_Log.LABEL-Client', 'Client'),
-                                    'FormattedValue' => isset($tracker['Icon']) ? '<img src="' . $tracker['Icon'] . '" alt="" class="icon-tiny" /> ' . $value : $value
+                                    'FormattedValue' => $formattedValue,
                                 )
                             )
                         );
@@ -462,5 +484,47 @@ class SendThis_Log extends DataObject {
     function canView($member = null)
     {
         return Permission::check('CAN_VIEW_SEND_LOGS');
+    }
+
+    protected function getClientFromTracker($client, $tracked = null) {
+        if(!$tracked)
+            $tracked = $this->Tracker;
+
+        if(strtolower($client) == 'gmail image proxy') {
+            return _t('SendThis_Log.WEB_CLIENT-GMAIL', 'Gmail');
+        }
+        if (isset($tracked['Type']) && strtolower($tracked['Type']) == 'email client')
+        {
+            $client = $tracked['Client'];
+        } elseif (isset($tracked['Type']) && strtolower($tracked['Type']) == 'browser' || strtolower($tracked['Type']) == 'mobile browser')
+        {
+            if (isset($tracked['ClientFull']) && ! preg_match('/.*[0-9]$/', $tracked['ClientFull']))
+            {
+                $client = _t(
+                    'SendThis_Log.EMAIL_CLIENT-MAC',
+                    'Mac Client (Apple Mail or Microsoft Entourage)'
+                );
+            } elseif (isset($tracked['Referrer']))
+            {
+                foreach ($this->config()->web_based_clients as $name => $url)
+                {
+                    if (preg_match("/$url/", $tracked['Referrer']))
+                    {
+                        $client = _t(
+                            'SendThis_Log.WEB_CLIENT-' . strtoupper(str_replace(' ', '_', $name)),
+                            $name
+                        );
+                        break;
+                    }
+                }
+            }
+
+            if (! $client)
+            {
+                $client = _t('SendThis_Log.BROWSER_BASED', 'Web Browser');
+            }
+        }
+
+        return $client;
     }
 }

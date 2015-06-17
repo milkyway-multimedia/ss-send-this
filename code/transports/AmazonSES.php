@@ -66,16 +66,19 @@ class AmazonSes extends Mail {
             }
         }
 
-        if($message) {
-            $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
-            $message .= 'Message: ' . $response->getReasonPhrase();
-            throw new Exception($message);
-        }
-
         $messageId = '';
 
         if(($result = $results->SendRawEmailResult) && isset($result['MessageId']))
             $messageId = $result['MessageId'];
+
+        if($message) {
+            $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
+            $message .= 'Message: ' . $response->getReasonPhrase();
+
+            $this->mailer->eventful()->fire(Event::named('sendthis:failed', $this->mailer), $messageId ? $messageId : $messenger->getLastMessageID(), $messenger->getToAddresses(), $results, $results, $log);
+
+            throw new Exception($message);
+        }
 
         $this->mailer->eventful()->fire(Event::named('sendthis:sent', $this->mailer), $messageId, $messenger->getToAddresses(), $results, $results, $log);
 
