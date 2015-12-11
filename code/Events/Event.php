@@ -1,18 +1,18 @@
-<?php
+<?php namespace Milkyway\SS\SendThis\Events;
+
 /**
  * Milkyway Multimedia
  * Event.php
  *
- * @package milkywaymultimedia.com.au
+ * @package milkyway-multimedia/ss-send-this
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 
-namespace Milkyway\SS\SendThis\Events;
-
+use Milkyway\SS\SendThis\Contracts\Event as Contract;
 use League\Event\Event as AbstractEvent;
 use Milkyway\SS\SendThis\Mailer;
 
-class Event extends AbstractEvent {
+class Event extends AbstractEvent implements Contract {
     protected $mailer;
 
     /**
@@ -23,8 +23,8 @@ class Event extends AbstractEvent {
      */
     public function __construct($name, Mailer $mailer = null)
     {
-        $this->name = $name;
         $this->mailer = $mailer;
+        parent::__construct($name);
     }
 
     public function mailer() {

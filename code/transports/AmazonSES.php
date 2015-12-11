@@ -1,20 +1,29 @@
 <?php namespace Milkyway\SS\SendThis\Transports;
-use Milkyway\SS\SendThis\Events\Event;
 
 /**
  * Milkyway Multimedia
- * SendThis_AmazonSES.php
+ * AmazonSes.php
  *
- * @package milkyway-multimedia/silverstripe-send-this
+ * @package milkyway-multimedia/ss-send-this
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
+
+use GuzzleHttp\Client;
+use PHPMailer;
+use ViewableData;
+
+use Psr\Http\Message\ResponseInterface;
+use SimpleXMLElement;
+use RuntimeException;
+use Exception;
+
 class AmazonSes extends Mail {
 	protected $params = [
 		'endpoint' => 'https://email.{location}.amazonaws.com',
 		'location' => 'us-east-1',
 	];
 
-    function start(\PHPMailer $messenger, \ViewableData $log = null)
+    public function start(PHPMailer $messenger, ViewableData $log = null)
     {
         if(isset($this->params['key']) && isset($this->params['secret'])) {
             if(!$messenger->PreSend())
@@ -32,7 +41,7 @@ class AmazonSes extends Mail {
                         'Content-Type' => 'application/x-www-form-urlencoded',
                         'X-Amzn-Authorization' => 'AWS3-HTTPS AWSAccessKeyId=' . urlencode($this->params['key']) . ',Algorithm=HmacSHA256,Signature=' . base64_encode(hash_hmac('sha256', $date, $this->params['secret'], true)),
                     ),
-                    'body' => array(
+                    'form_params' => array(
                         'Action' => 'SendRawEmail',
                         'RawMessage.Data' => base64_encode($message),
                     ),
@@ -45,14 +54,14 @@ class AmazonSes extends Mail {
         throw new Exception('Invalid credentials. Could not connect to Amazon SES');
     }
 
-    public function handleResponse(\GuzzleHttp\Message\ResponseInterface $response, $messenger = null, $log = null) {
+    public function handleResponse(ResponseInterface $response, $messenger = null, $log = null) {
         $body = $response->getBody();
         $message = '';
 
         if(!$body)
             $message = 'Empty response received from Amazon SES' . "\n";
 
-        $results = $response->xml();
+        $results = $this->parse($response);
 
         if((($statusCode = $response->getStatusCode()) && ($statusCode < 200 || $statusCode > 399))) {
             if($log)
@@ -60,7 +69,7 @@ class AmazonSes extends Mail {
 
             $message = 'Problem sending via Amazon SES' . "\n";
 
-            if(($errors = $results->Error) && count($errors)) {
+            if(($errors = $results->Error) && !empty($errors)) {
                 $error = array_pop($errors);
                 $message .= urldecode(http_build_query($error, '', "\n"));
             }
@@ -75,12 +84,12 @@ class AmazonSes extends Mail {
             $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
             $message .= 'Message: ' . $response->getReasonPhrase();
 
-            $this->mailer->eventful()->fire(Event::named('sendthis:failed', $this->mailer), $messageId ? $messageId : $messenger->getLastMessageID(), $messenger->getToAddresses(), $results, $results, $log);
+            $this->mailer->eventful()->fire(singleton('sendthis-event')->named('sendthis:failed', $this->mailer), $messageId ? $messageId : $messenger->getLastMessageID(), $messenger->getToAddresses(), $results, $results, $log);
 
             throw new Exception($message);
         }
 
-        $this->mailer->eventful()->fire(Event::named('sendthis:sent', $this->mailer), $messageId, $messenger->getToAddresses(), $results, $results, $log);
+        $this->mailer->eventful()->fire(singleton('sendthis-event')->named('sendthis:sent', $this->mailer), $messageId, $messenger->getToAddresses(), $results, $results, $log);
 
         return true;
     }
@@ -92,7 +101,7 @@ class AmazonSes extends Mail {
      */
     protected function http()
     {
-        return new \GuzzleHttp\Client;
+        return new Client;
     }
 
     protected function endpoint()
@@ -102,5 +111,32 @@ class AmazonSes extends Mail {
 
     function applyHeaders(array &$headers) {
 
+    }
+
+    protected function parse(ResponseInterface $response)
+    {
+        $errorMessage = null;
+        $internalErrors = libxml_use_internal_errors(true);
+        $disableEntities = libxml_disable_entity_loader(true);
+        libxml_clear_errors();
+
+        try {
+            $xml = new SimpleXMLElement((string) $response->getBody() ?: '<root />', LIBXML_NONET);
+            if ($error = libxml_get_last_error()) {
+                $errorMessage = $error->message;
+            }
+        } catch (Exception $e) {
+            $errorMessage = $e->getMessage();
+        }
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($internalErrors);
+        libxml_disable_entity_loader($disableEntities);
+
+        if ($errorMessage) {
+            throw new RuntimeException('Unable to parse response body into XML: ' . $errorMessage);
+        }
+
+        return $xml;
     }
 }

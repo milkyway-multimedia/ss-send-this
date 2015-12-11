@@ -1,200 +1,253 @@
-<?php
+<?php namespace Milkyway\SS\SendThis\MessageParsers;
+
 /**
  * Milkyway Multimedia
  * Standard.php
  *
- * @package milkywaymultimedia.com.au
+ * @package milkyway-multimedia/ss-send-this
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 
-namespace Milkyway\SS\SendThis\MessageParsers;
-
-use Milkyway\SS\Director;
+use Milkyway\SS\SendThis\Contracts\MessageParser as Contract;
+use Milkyway\SS\SendThis\Contracts\Transport;
+use PHPMailer;
 use Milkyway\SS\SendThis\Mailer;
+use SendThis_Blacklist;
 
-class Standard implements Contract {
-	protected $message;
-	protected $config;
+use Config_ForClass;
+use Email;
 
-	/** @var bool Whether there is no to email in current message */
-	protected $noTo = false;
+class Standard implements Contract
+{
+    protected $message;
+    protected $config;
 
-	public function __construct(\PHPMailer $message = null, \Config_ForClass $config = null) {
-		$this->message = $message;
-		$this->config = $config;
-	}
+    /** @var bool Whether there is no to email in current message */
+    protected $noTo = false;
 
-	public function setMessage(\PHPMailer $message) {
-		$this->message = $message;
-		return $this;
-	}
+    public function __construct(PHPMailer $message = null, Config_ForClass $config = null)
+    {
+        $this->message = $message;
+        $this->config = $config;
+    }
 
-	public function setConfig(\Config_ForClass $config) {
-		$this->config = $config;
-		return $this;
-	}
+    public function setMessage(PHPMailer $message)
+    {
+        $this->message = $message;
+        return $this;
+    }
 
-	public function parse($to, $from, $subject, $attachedFiles = null, $headers = null) {
-		if(!$headers) $headers = [];
+    public function setConfig(Config_ForClass $config)
+    {
+        $this->config = $config;
+        return $this;
+    }
 
-		$ignoreValid = false;
+    public function parse($to, $from, $subject, $attachedFiles = null, $headers = null, Transport $transport = null)
+    {
+        if (!$headers) {
+            $headers = [];
+        }
 
-		if(isset($headers['X-Milkyway-Priority'])) {
-			$ignoreValid = true;
-			unset($headers['X-Milkyway-Priority']);
-		}
+        $sameDomain = $transport->param('from_same_domain_only') ?: $this->config->from_same_domain_only;
 
-		// set the to
-		if(!$this->addEmail($to, 'addAddress', $this->message, $ignoreValid))
-			$this->noTo = true;
+        $ignoreValid = false;
 
-		list($doFrom, $doFromName) = Mailer::split_email($from);
+        if (isset($headers['X-Milkyway-Priority'])) {
+            $ignoreValid = true;
+            unset($headers['X-Milkyway-Priority']);
+        }
 
-		if($sameDomain = $this->config->from_same_domain_only) {
-			$base = '@' . Director::baseWebsiteURL();
+        // set the to
+        if (!$this->addEmail($to, 'addAddress', $this->message, $ignoreValid)) {
+            $this->noTo = true;
+        }
 
-			if(!is_bool($sameDomain) || !$doFrom || !(substr($doFrom, -strlen($base)) === $base)) {
-				$realFrom = $doFrom;
-				$realFromName = $doFromName;
+        list($doFrom, $doFromName) = Mailer::split_email($from);
 
-				if(!is_bool($sameDomain)) {
-					list($doFrom, $doFromName) = Mailer::split_email($sameDomain);
-					if(!$realFromName && !$doFromName)
-						$doFromName = \ClassInfo::exists('SiteConfig') ? \SiteConfig::current_site_config()->AdminName : singleton('LeftAndMain')->ApplicationName;
-				}
+        if ($sameDomain) {
+            $base = '@' . singleton('director')->baseWebsiteURL();
 
-				if((!$doFrom || (is_bool($sameDomain) && !(substr($doFrom, -strlen($base)) === $base))) && \ClassInfo::exists('SiteConfig')) {
-					list($doFrom, $doFromName) = Mailer::split_email(\SiteConfig::current_site_config()->AdminEmail);
-					if(!$realFromName && !$doFromName) $doFromName = \SiteConfig::current_site_config()->AdminName;
-				}
+            if (!is_bool($sameDomain) || !$doFrom || !(substr($doFrom, -strlen($base)) === $base)) {
+                $realFrom = $doFrom;
+                $realFromName = $doFromName;
 
-				if(!$doFrom || (is_bool($sameDomain) && !(substr($doFrom, -strlen($base)) === $base))) {
-					list($doFrom, $doFromName) = Mailer::split_email(Mailer::admin_email());
-					if(!$realFromName && !$doFromName) $doFromName = singleton('LeftAndMain')->ApplicationName;
-				}
+                if (!is_bool($sameDomain)) {
+                    list($doFrom, $doFromName) = Mailer::split_email($sameDomain);
+                    if (!$realFromName && !$doFromName) {
+                        $doFromName = class_exists('SiteConfig') ? singleton('SiteConfig')->current_site_config()->AdminName : singleton('LeftAndMain')->ApplicationName;
+                    }
+                }
 
-				if(!isset($headers['Reply-To']))
-					$this->message->addReplyTo($realFrom, $realFromName);
-			}
-		}
+                if ((!$doFrom || (is_bool($sameDomain) && !(substr($doFrom,
+                                    -strlen($base)) === $base))) && class_exists('SiteConfig')
+                ) {
+                    list($doFrom, $doFromName) = Mailer::split_email(singleton('SiteConfig')->current_site_config()->AdminEmail);
+                    if (!$realFromName && !$doFromName) {
+                        $doFromName = singleton('SiteConfig')->current_site_config()->AdminName;
+                    }
+                }
 
-		if(!$doFrom) {
-			if(\ClassInfo::exists('SiteConfig'))
-				list($doFrom, $doFromName) = Mailer::split_email(\SiteConfig::current_site_config()->AdminEmail);
+                if (!$doFrom || (is_bool($sameDomain) && !(substr($doFrom, -strlen($base)) === $base))) {
+                    list($doFrom, $doFromName) = Mailer::split_email(Mailer::admin_email());
+                    if (!$realFromName && !$doFromName) {
+                        $doFromName = singleton('LeftAndMain')->ApplicationName;
+                    }
+                }
 
-			if(!$doFrom)
-				list($doFrom, $doFromName) = Mailer::split_email(Mailer::admin_email());
-		}
+                if (!isset($headers['Reply-To'])) {
+                    $this->message->addReplyTo($realFrom, $realFromName);
+                }
+            }
+        }
 
-		$this->message->setFrom($doFrom, $doFromName);
-		$this->message->Subject = $subject;
+        if (!$doFrom) {
+            if (class_exists('SiteConfig')) {
+                list($doFrom, $doFromName) = Mailer::split_email(singleton('SiteConfig')->current_site_config()->AdminEmail);
+            }
 
-		if (is_array($attachedFiles)) {
-			foreach($attachedFiles as $file) {
-				if (isset($file['tmp_name']) && isset($file['name']))
-					$this->message->addAttachment($file['tmp_name'], $file['name']);
-				elseif (isset($file['contents']))
-					$this->message->addStringAttachment($file['contents'], $file['filename']);
-				else
-					$this->message->addAttachment($file);
-			}
-		}
+            if (!$doFrom) {
+                list($doFrom, $doFromName) = Mailer::split_email(Mailer::admin_email());
+            }
+        }
 
-		if(is_array($headers) && count($headers)) {
-			// the carbon copy header has to be 'Cc', not 'CC' or 'cc' -- ensure this.
-			if (isset($headers['CC'])) { $headers['Cc'] = $headers['CC']; unset($headers['CC']); }
-			if (isset($headers['cc'])) { $headers['Cc'] = $headers['cc']; unset($headers['cc']); }
+        $this->message->setFrom($doFrom, $doFromName);
+        $this->message->Subject = $subject;
 
-			// the carbon copy header has to be 'Bcc', not 'BCC' or 'bcc' -- ensure this.
-			if (isset($headers['BCC'])) {$headers['Bcc']=$headers['BCC']; unset($headers['BCC']); }
-			if (isset($headers['bcc'])) {$headers['Bcc']=$headers['bcc']; unset($headers['bcc']); }
+        if (is_array($attachedFiles)) {
+            foreach ($attachedFiles as $file) {
+                if (isset($file['tmp_name']) && isset($file['name'])) {
+                    $this->message->addAttachment($file['tmp_name'], $file['name']);
+                } elseif (isset($file['contents'])) {
+                    $this->message->addStringAttachment($file['contents'], $file['filename']);
+                } else {
+                    $this->message->addAttachment($file);
+                }
+            }
+        }
 
-			if(isset($headers['Cc'])) {
-				$this->addEmail($headers['Cc'], 'AddCC', $this->message, $ignoreValid);
-				unset($headers['Cc']);
-			}
+        if (is_array($headers) && !empty($headers)) {
+            // the carbon copy header has to be 'Cc', not 'CC' or 'cc' -- ensure this.
+            if (isset($headers['CC'])) {
+                $headers['Cc'] = $headers['CC'];
+                unset($headers['CC']);
+            }
+            if (isset($headers['cc'])) {
+                $headers['Cc'] = $headers['cc'];
+                unset($headers['cc']);
+            }
 
-			if(isset($headers['Bcc'])) {
-				$this->addEmail($headers['Bcc'], 'AddBCC', $this->message, $ignoreValid);
-				unset($headers['Bcc']);
-			}
+            // the carbon copy header has to be 'Bcc', not 'BCC' or 'bcc' -- ensure this.
+            if (isset($headers['BCC'])) {
+                $headers['Bcc'] = $headers['BCC'];
+                unset($headers['BCC']);
+            }
+            if (isset($headers['bcc'])) {
+                $headers['Bcc'] = $headers['bcc'];
+                unset($headers['bcc']);
+            }
 
-			if(isset($headers['X-SilverStripeMessageID'])) {
-				if(!isset($headers['Message-ID']))
-					$headers['Message-ID'] = $headers['X-SilverStripeMessageID'];
+            if (isset($headers['Cc'])) {
+                $this->addEmail($headers['Cc'], 'AddCC', $this->message, $ignoreValid);
+                unset($headers['Cc']);
+            }
 
-				$headers['X-MilkywayMessageID'] = $headers['X-SilverStripeMessageID'];
-				unset($headers['X-SilverStripeMessageID']);
-			}
+            if (isset($headers['Bcc'])) {
+                $this->addEmail($headers['Bcc'], 'AddBCC', $this->message, $ignoreValid);
+                unset($headers['Bcc']);
+            }
 
-			if(isset($headers['X-SilverStripeSite'])) {
-				$headers['X-MilkywaySite'] = \ClassInfo::exists('SiteConfig') ? \SiteConfig::current_site_config()->Title : singleton('LeftAndMain')->ApplicationName;
-				unset($headers['X-SilverStripeSite']);
-			}
+            if (isset($headers['X-SilverStripeMessageID'])) {
+                if (!isset($headers['Message-ID'])) {
+                    $headers['Message-ID'] = $headers['X-SilverStripeMessageID'];
+                }
 
-			if(isset($headers['Reply-To'])) {
-				$this->addEmail($headers['Reply-To'], 'AddReplyTo', $this->message, true);
-				unset($headers['Reply-To']);
-			}
+                $headers['X-MilkywayMessageID'] = $headers['X-SilverStripeMessageID'];
+                unset($headers['X-SilverStripeMessageID']);
+            }
 
-			if(isset($headers['X-Priority'])) {
-				$this->message->Priority = $headers['X-Priority'];
-				unset($headers['X-Priority']);
-			}
-		}
+            if (isset($headers['X-SilverStripeSite'])) {
+                $headers['X-MilkywaySite'] = class_exists('SiteConfig') ? singleton('SiteConfig')->current_site_config()->Title : singleton('LeftAndMain')->ApplicationName;
+                unset($headers['X-SilverStripeSite']);
+            }
 
-		// Email has higher chance of being received if there is a too email sent...
-		if($this->noTo && $to = \Email::config()->default_to_email) {
-			$this->addEmail($to, 'AddAddress', $this->message, $ignoreValid);
-			$this->noTo = false;
-		}
+            if (isset($headers['Reply-To'])) {
+                $this->addEmail($headers['Reply-To'], 'AddReplyTo', $this->message, true);
+                unset($headers['Reply-To']);
+            }
 
-		$server = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : singleton('LeftAndMain')->ApplicationName;
-		$this->message->XMailer = sprintf('SendThis Mailer 2.0 (Sent from %s)', $server);
+            if (isset($headers['X-Priority'])) {
+                $this->message->Priority = $headers['X-Priority'];
+                unset($headers['X-Priority']);
+            }
+        }
 
-		if($this->config->confirm_reading_to)
-			$this->message->ConfirmReadingTo = $this->config->confirm_reading_to;
+        // Email has higher chance of being received if there is a too email sent...
+        if ($this->noTo && $to = Email::config()->default_to_email) {
+            $this->addEmail($to, 'AddAddress', $this->message, $ignoreValid);
+            $this->noTo = false;
+        }
 
-		if($this->config->word_wrap)
-			$this->message->WordWrap = $this->config->word_wrap;
+        $server = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : singleton('LeftAndMain')->ApplicationName;
+        $this->message->XMailer = sprintf('SendThis Mailer 0.2 (Sent from %s)', $server);
 
-		foreach ($headers as $k => $v)
-			$this->message->AddCustomHeader($k, $v);
+        if ($this->config->confirm_reading_to) {
+            $this->message->ConfirmReadingTo = $this->config->confirm_reading_to;
+        }
 
-		return $this->message;
-	}
+        if ($this->config->word_wrap) {
+            $this->message->WordWrap = $this->config->word_wrap;
+        }
 
-	protected function addEmail($in, $func, $email = null, $break = false, $ignoreValid = false, $hidden = false) {
-		if(!$email) $email = $this->message;
+        foreach ($headers as $k => $v) {
+            $this->message->AddCustomHeader($k, $v);
+        }
 
-		$success = false;
+        foreach ((array)$this->config->headers as $k => $v) {
+            $this->message->AddCustomHeader($k, $v);
+        }
 
-		$list = explode(',', $in);
-		foreach ($list as $item) {
-			if(!trim($item)) continue;
+        return $this->message;
+    }
 
-			list($a,$b) = Mailer::split_email($item);
+    protected function addEmail($in, $func, $email = null, $break = false, $ignoreValid = false, $hidden = false)
+    {
+        if (!$email) {
+            $email = $this->message;
+        }
 
-			if(\SendThis_Blacklist::check($a, $ignoreValid))  {
-				if($break)
-					return false;
-				else
-					continue;
-			}
+        $success = false;
 
-			if(!$a || !\Email::is_valid_address(($a)))
-				continue;
+        $list = explode(',', $in);
+        foreach ($list as $item) {
+            if (!trim($item)) {
+                continue;
+            }
 
-			$success = true;
+            list($a, $b) = Mailer::split_email($item);
 
-			if(!$hidden && $this->noTo) {
-				$email->AddAddress($a, $b);
-				$this->noTo = false;
-			}
-			else
-				$email->$func($a, $b);
-		}
+            if (SendThis_Blacklist::check($a, $ignoreValid)) {
+                if ($break) {
+                    return false;
+                } else {
+                    continue;
+                }
+            }
 
-		return $success;
-	}
+            if (!$a || !Email::is_valid_address(($a))) {
+                continue;
+            }
+
+            $success = true;
+
+            if (!$hidden && $this->noTo) {
+                $email->AddAddress($a, $b);
+                $this->noTo = false;
+            } else {
+                $email->$func($a, $b);
+            }
+        }
+
+        return $success;
+    }
 } 

@@ -2,10 +2,11 @@
 Name: sendthis-injector
 ---
 Injector:
-  'Milkyway\SS\SendThis\Mailer':
+  Mailer:
+    class: 'Milkyway\SS\SendThis\Mailer'
     constructor:
       0: '%$Milkyway\SS\SendThis\PHPMailer'
-      1: '%$Milkyway\SS\SendThis\MessageParsers\Contract'
+      1: '%$Milkyway\SS\SendThis\Contracts\MessageParser'
       2: '%$Eventful'
 
   'Milkyway\SS\SendThis\PHPMailer':
@@ -13,5 +14,10 @@ Injector:
     constructor:
       0: true
 
-  'Milkyway\SS\SendThis\MessageParsers\Contract':
+  'Milkyway\SS\SendThis\Contracts\MessageParser':
     class: 'Milkyway\SS\SendThis\MessageParsers\Standard'
+
+  'sendthis-event':
+    class: 'Milkyway\SS\SendThis\Events\Event'
+    constructor:
+      0: 'sendthis:event'

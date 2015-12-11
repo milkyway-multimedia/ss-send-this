@@ -9,6 +9,8 @@
 
 namespace Milkyway\SS\SendThis\Transports;
 
-class Exception extends \Exception {
+use Exception as Original;
+
+class Exception extends Original {
 
 } 

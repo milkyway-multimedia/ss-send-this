@@ -1,11 +1,13 @@
 <?php namespace Milkyway\SS\SendThis\Listeners;
+
 /**
  * Milkyway Multimedia
  * Relations.php
  *
- * @package reggardocolaianni.com
+ * @package milkyway-multimedia/ss-send-this
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
+
 class Relations {
     public function up($e, $messageId, $email, $params, $response, $log, $headers) {
         if(!$log) return;

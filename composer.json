@@ -1,38 +1,32 @@
 {
-	"name"              : "milkyway-multimedia/ss-send-this",
-	"description"       : "Another mailer for Silverstripe...",
-	"type"              : "silverstripe-module",
-	"keywords"          : [
-		"silverstripe",
-		"email"
-	],
-	"license"           : "MIT",
-	"authors"           : [
-		{
-			"name"  : "Mellisa Hankins",
-			"email" : "mell@milkywaymultimedia.com.au"
-		}
-	],
-	"require"           : {
-		"php"                                   : ">=5.4.0",
-		"silverstripe/framework"                : "~3.1",
-		"phpmailer/phpmailer"                   : "~5.2",
-		"guzzlehttp/guzzle"                     : "~4",
-		"milkyway-multimedia/ss-hashable"       : "dev-master",
-		"milkyway-multimedia/ss-mwm"            : "dev-master",
-		"milkyway-multimedia/ss-eventful" : "dev-master"
-	},
-	"repositories"      : [
-		{
-			"type" : "vcs",
-			"url"  : "https://github.com/milkyway-multimedia/ss-hashable"
-		}
-	],
-	"config"            : {
-		"process-timeout" : 600
-	},
-	"minimum-stability" : "dev",
-	"extra"             : {
-		"installer-name" : "send-this"
-	}
+  "name"       : "milkyway-multimedia/ss-send-this",
+  "description": "Mailer for Silverstripe that supports Mandrill, SMTP, Amazon SES and PHP Mail, with logging and tracking",
+  "type"       : "silverstripe-module",
+  "keywords"   : [
+    "silverstripe",
+    "email",
+    "mailer"
+  ],
+  "license"    : "MIT",
+  "authors"    : [
+    {
+      "name" : "Mellisa Hankins",
+      "email": "mell@milkywaymultimedia.com.au"
+    }
+  ],
+  "require"    : {
+    "php"                                  : ">=5.4.0",
+    "silverstripe/framework"               : "~3.2",
+    "phpmailer/phpmailer"                  : "~5.2",
+    "guzzlehttp/guzzle"                    : "~6",
+    "milkyway-multimedia/ss-mwm-behaviours": "~0.2",
+    "milkyway-multimedia/ss-mwm"           : "~0.3",
+    "milkyway-multimedia/ss-eventful"      : "~0.2"
+  },
+  "extra"      : {
+    "installer-name": "send-this",
+    "branch-alias"  : {
+      "dev-master": "0.2.x-dev"
+    }
+  }
 }
