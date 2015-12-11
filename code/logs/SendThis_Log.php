@@ -48,7 +48,7 @@ class SendThis_Log extends DataObject
     ];
 
     private static $extensions = [
-        'Sluggable',
+        'Milkyway\\SS\\Behaviours\\Extensions\\Sluggable',
     ];
 
     private static $has_one = [

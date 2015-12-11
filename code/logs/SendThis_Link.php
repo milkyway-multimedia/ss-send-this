@@ -8,7 +8,7 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 
-use \Milkyway\SS\SendThis\Controllers\Tracker;
+use Milkyway\SS\SendThis\Controllers\Tracker;
 
 class SendThis_Link extends DataObject
 {
@@ -20,7 +20,7 @@ class SendThis_Link extends DataObject
     ];
 
     private static $extensions = [
-        'Sluggable',
+        'Milkyway\\SS\\Behaviours\\Extensions\\Sluggable',
     ];
 
     private static $has_one = [
@@ -35,7 +35,7 @@ class SendThis_Link extends DataObject
 
     public function getURL()
     {
-        if (!$this->Sluggable) {
+        if (!$this->Slug) {
             $this->write();
         }
 
