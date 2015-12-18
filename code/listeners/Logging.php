@@ -12,7 +12,6 @@ use Milkyway\SS\SendThis\Contracts\Event;
 use Member;
 use SS_Datetime;
 use Object;
-
 use SendThis_Bounce as Bounce;
 use SendThis_Blacklist as Blacklist;
 use SendThis_Log as Log;
@@ -258,4 +257,4 @@ class Logging
     {
         return $mailer->config()->logging && !$mailer->config()->api_tracking;
     }
-} 
+}

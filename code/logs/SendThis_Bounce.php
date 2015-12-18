@@ -38,4 +38,4 @@ class SendThis_Bounce extends DataObject
 
         return parent::canView($member);
     }
-} 
+}

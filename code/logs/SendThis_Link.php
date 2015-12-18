@@ -64,4 +64,4 @@ class SendThis_Link extends DataObject
 
         return parent::canView($member);
     }
-} 
+}

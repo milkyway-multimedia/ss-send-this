@@ -88,7 +88,7 @@ class Tracking extends DefaultTracking
         }
     }
 
-    function getTrackerData($response)
+    public function getTrackerData($response)
     {
         $tracked = [];
 
@@ -159,4 +159,4 @@ class Tracking extends DefaultTracking
     {
         return isset($data[$key]) ? $data[$key] : $default;
     }
-} 
+}

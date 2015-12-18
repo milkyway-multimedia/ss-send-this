@@ -19,7 +19,7 @@ class Tracker extends Controller
 {
     private static $slug = '$Slug/mail-footer.gif';
 
-    function index($r)
+    public function index($r)
     {
         if ($r->param('Slug') && Email::mailer() instanceof Mailer && $log = Log::get()->filter('Slug',
                 Convert::raw2sql($r->param('Slug')))->first()

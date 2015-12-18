@@ -18,4 +18,4 @@ interface Transport
     public function applyHeaders(array &$headers);
 
     public function param($key);
-} 
+}

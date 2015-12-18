@@ -34,17 +34,17 @@ class EmailSubscriptions extends Controller
 
     private static $slug = 'email-subscriptions';
 
-    function Link($action = '')
+    public function Link($action = '')
     {
         return $this->join_links($this->config()->slug, $action);
     }
 
-    function index($request)
+    public function index($request)
     {
         return $this->block($request);
     }
 
-    function block($r)
+    public function block($r)
     {
         $controller = $this->displayNiceView($this);
         $controller->init();
@@ -61,7 +61,7 @@ class EmailSubscriptions extends Controller
         ])->renderWith($this->getTemplates('block'));
     }
 
-    function unblock($r)
+    public function unblock($r)
     {
         $controller = $this->displayNiceView($this);
         $controller->init();
@@ -77,7 +77,7 @@ class EmailSubscriptions extends Controller
         ])->renderWith($this->getTemplates('unblock'));
     }
 
-    function BlockForm()
+    public function BlockForm()
     {
         $r = $this->request;
         $email = $r->param('Email') ? $r->param('Email') : $r->requestVar('email');
@@ -106,7 +106,7 @@ class EmailSubscriptions extends Controller
         return $this->bootstrapped($form);
     }
 
-    function UnblockForm()
+    public function UnblockForm()
     {
         $r = $this->request;
         $email = $r->param('Email') ? $r->param('Email') : $r->requestVar('email');
@@ -135,7 +135,7 @@ class EmailSubscriptions extends Controller
         return $this->bootstrapped($form);
     }
 
-    function doBlock($data, $form, $r)
+    public function doBlock($data, $form, $r)
     {
         $fields = $form->Data;
 
@@ -171,12 +171,11 @@ class EmailSubscriptions extends Controller
                                     rawurlencode($fields['Email']))),
                         ]
                     ),
-                ]
-                , $form);
+                ], $form);
         }
     }
 
-    function doUnblock($data, $form, $request)
+    public function doUnblock($data, $form, $request)
     {
         $fields = $form->Data;
 

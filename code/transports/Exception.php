@@ -11,6 +11,6 @@ namespace Milkyway\SS\SendThis\Transports;
 
 use Exception as Original;
 
-class Exception extends Original {
-
-} 
+class Exception extends Original
+{
+}

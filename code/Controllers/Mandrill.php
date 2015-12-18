@@ -144,4 +144,4 @@ class Mandrill extends Controller
                 $eventParams);
         }
     }
-} 
+}

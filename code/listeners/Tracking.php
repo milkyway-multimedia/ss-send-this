@@ -222,7 +222,7 @@ class Tracking
         return singleton('mwm')->add_link_data($url, $log->LinkData);
     }
 
-    function getTrackerData($data)
+    public function getTrackerData($data)
     {
         $tracked = $data;
 
@@ -295,4 +295,4 @@ class Tracking
 
         return $client;
     }
-} 
+}

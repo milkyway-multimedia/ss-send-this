@@ -12,7 +12,8 @@ use Milkyway\SS\SendThis\Contracts\Event as Contract;
 use League\Event\Event as AbstractEvent;
 use Milkyway\SS\SendThis\Mailer;
 
-class Event extends AbstractEvent implements Contract {
+class Event extends AbstractEvent implements Contract
+{
     protected $mailer;
 
     /**
@@ -27,7 +28,8 @@ class Event extends AbstractEvent implements Contract {
         parent::__construct($name);
     }
 
-    public function mailer() {
+    public function mailer()
+    {
         return $this->mailer;
     }
 
@@ -35,4 +37,4 @@ class Event extends AbstractEvent implements Contract {
     {
         return new static($name, $mailer);
     }
-} 
+}
