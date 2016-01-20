@@ -11,23 +11,24 @@
 use GuzzleHttp\Client;
 use PHPMailer;
 use ViewableData;
-
 use Psr\Http\Message\ResponseInterface;
 use SimpleXMLElement;
 use RuntimeException;
 use Exception;
 
-class AmazonSes extends Mail {
-	protected $params = [
-		'endpoint' => 'https://email.{location}.amazonaws.com',
-		'location' => 'us-east-1',
-	];
+class AmazonSes extends Mail
+{
+    protected $params = [
+        'endpoint' => 'https://email.{location}.amazonaws.com',
+        'location' => 'us-east-1',
+    ];
 
     public function start(PHPMailer $messenger, ViewableData $log = null)
     {
-        if(isset($this->params['key']) && isset($this->params['secret'])) {
-            if(!$messenger->PreSend())
+        if (isset($this->params['key']) && isset($this->params['secret'])) {
+            if (!$messenger->PreSend()) {
                 return false;
+            }
 
             $date = date('r');
             $message = $messenger->GetSentMIMEMessage();
@@ -54,22 +55,25 @@ class AmazonSes extends Mail {
         throw new Exception('Invalid credentials. Could not connect to Amazon SES');
     }
 
-    public function handleResponse(ResponseInterface $response, $messenger = null, $log = null) {
+    public function handleResponse(ResponseInterface $response, $messenger = null, $log = null)
+    {
         $body = $response->getBody();
         $message = '';
 
-        if(!$body)
+        if (!$body) {
             $message = 'Empty response received from Amazon SES' . "\n";
+        }
 
         $results = $this->parse($response);
 
-        if((($statusCode = $response->getStatusCode()) && ($statusCode < 200 || $statusCode > 399))) {
-            if($log)
+        if ((($statusCode = $response->getStatusCode()) && ($statusCode < 200 || $statusCode > 399))) {
+            if ($log) {
                 $log->MessageID = $results->RequestId;
+            }
 
             $message = 'Problem sending via Amazon SES' . "\n";
 
-            if(($errors = $results->Error) && !empty($errors)) {
+            if (($errors = $results->Error) && !empty($errors)) {
                 $error = array_pop($errors);
                 $message .= urldecode(http_build_query($error, '', "\n"));
             }
@@ -77,10 +81,11 @@ class AmazonSes extends Mail {
 
         $messageId = '';
 
-        if(($result = $results->SendRawEmailResult) && isset($result['MessageId']))
+        if (($result = $results->SendRawEmailResult) && isset($result['MessageId'])) {
             $messageId = $result['MessageId'];
+        }
 
-        if($message) {
+        if ($message) {
             $message .= 'Status Code: ' . $response->getStatusCode() . "\n";
             $message .= 'Message: ' . $response->getReasonPhrase();
 
@@ -109,8 +114,8 @@ class AmazonSes extends Mail {
         return str_replace('{location}', $this->params['location'], $this->params['endpoint']);
     }
 
-    function applyHeaders(array &$headers) {
-
+    public function applyHeaders(array &$headers)
+    {
     }
 
     protected function parse(ResponseInterface $response)

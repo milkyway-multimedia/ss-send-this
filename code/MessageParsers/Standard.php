@@ -13,7 +13,6 @@ use Milkyway\SS\SendThis\Contracts\Transport;
 use PHPMailer;
 use Milkyway\SS\SendThis\Mailer;
 use SendThis_Blacklist;
-
 use Config_ForClass;
 use Email;
 
@@ -250,4 +249,4 @@ class Standard implements Contract
 
         return $success;
     }
-} 
+}

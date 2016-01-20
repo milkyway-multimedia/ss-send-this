@@ -18,4 +18,4 @@ interface MessageParser
     public function setConfig(Config_ForClass $config);
 
     public function parse($to, $from, $subject, $attachedFiles = null, $headers = null);
-} 
+}

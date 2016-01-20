@@ -144,4 +144,4 @@ class SendThis_Blacklist extends DataObject
 
         return parent::canView($member);
     }
-} 
+}

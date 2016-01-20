@@ -12,7 +12,6 @@ use GuzzleHttp\Client;
 use PHPMailer;
 use ViewableData;
 use Controller;
-
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 
@@ -23,7 +22,7 @@ class Mandrill extends Mail
         'async' => true,
     ];
 
-    function start(PHPMailer $messenger, ViewableData $log = null)
+    public function start(PHPMailer $messenger, ViewableData $log = null)
     {
         if (isset($this->params['key'])) {
             if (!$messenger->PreSend()) {

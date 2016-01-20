@@ -8,6 +8,7 @@
  * @author Mellisa Hankins <mell@milkywaymultimedia.com.au>
  */
 
-interface Event {
-	public function mailer();
-} 
+interface Event
+{
+    public function mailer();
+}

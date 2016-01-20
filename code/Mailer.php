@@ -259,14 +259,14 @@ class Mailer extends Original
 
     protected function transport($transport = null)
     {
-        if($transport instanceof Transport) {
+        if ($transport instanceof Transport) {
             return $transport;
         }
 
-        if(!is_array($transport)) {
+        if (!is_array($transport)) {
             $transport = $transport ?: $this->config()->transport ?: 'default';
 
-            if(isset($this->transports[$transport])) {
+            if (isset($this->transports[$transport])) {
                 return $this->transports[$transport];
             }
         }
@@ -277,16 +277,16 @@ class Mailer extends Original
         $driver = null;
         $class = '';
 
-        if(is_array($transport)) {
+        if (is_array($transport)) {
             $driver = isset($transport['driver']) ? $transport['driver'] : null;
             $class = $driver && is_array($driver) && isset($driver['class']) ? $driver['class'] : '';
         }
 
-        if(!$driver) {
+        if (!$driver) {
             $driver = isset($transports[$transport]) && isset($transports[$transport]['driver']) ? $transports[$transport]['driver'] : $transport;
         }
 
-        if(!$class) {
+        if (!$class) {
             $class = isset($drivers[$driver]) && isset($drivers[$driver]['class']) ? $drivers[$driver]['class'] : $driver;
         }
 
@@ -296,10 +296,9 @@ class Mailer extends Original
             $params = array_merge($params, (array)$drivers[$driver]['params']);
         }
 
-        if(is_array($transport) && isset($transport['params'])) {
+        if (is_array($transport) && isset($transport['params'])) {
             $params = array_merge($params, (array)$transport['params']);
-        }
-        else if (!isset($transports[$transport]) && isset($transports[$transport]['params'])) {
+        } elseif (!isset($transports[$transport]) && isset($transports[$transport]['params'])) {
             $params = array_merge($params, (array)$transports[$transport]['params']);
         }
 

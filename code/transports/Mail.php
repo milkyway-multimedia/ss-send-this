@@ -9,7 +9,6 @@
  */
 
 use Milkyway\SS\SendThis\Contracts\Transport;
-
 use Milkyway\SS\SendThis\Mailer;
 use PHPMailer;
 use ViewableData;
