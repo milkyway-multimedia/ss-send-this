@@ -5,6 +5,8 @@ Send This (Email Transport)
 It is focused on sending email via API and SMTP, and supports the following methods of transport:
 - Mandrill (via API)
 - Amazon SES (via API)
+- SendGrid (via API)
+- Mailgun (via API)
 - SMTP
 - PHP Mail
 
@@ -22,7 +24,7 @@ Add the following to your composer.json file
     "require"          : {
 		"milkyway-multimedia/ss-send-this": "~0.2"
 	}
-	
+
 ```
 
 ### Web Hook Events
@@ -78,26 +80,34 @@ The following options are available for your YAML config.
 ```
 
     SendThis:
-      transport: 'default|smtp|ses|mandrill' # the default transport/driver
-      
+      transport: 'default|smtp|ses|mandrill|sendgrid|mailgun|custom' # the default transport/driver
+
       drivers:
         smtp:
           params:
             host: 'only needed if you are using smtp transport'
-            port: '(optional) only set if you are using smtp transport'
-            username: '(optional) only set if you are using smtp transport'
-            password: '(optional) only set if you are using smtp transport'
-            secured_with: '(optional) only set if you are using smtp transport'
-            keep_alive: '(optional) only set if you are using smtp transport'
-            
-         ses:
+            port: '' # optional
+            username: '' # optional
+            password: '' # optional
+            secured_with: '' # optional (accepts tls or ssl)
+            keep_alive: false # optional (true/false)
+
+        ses:
           params:
-            key: 'only needed if you are using ses or mandrill drivers'
-            secret: 'only needed if you are using ses drivers'
-            
-         mandrill:
+            key: ''
+            secret: ''
+
+        mandrill:
           params:
-            key: 'only needed if you are using ses or mandrill drivers'
+            key: ''
+
+        sendgrid:
+          params:
+            key: ''
+
+        mailgun:
+          params:
+            key: ''
 
       logging: true
       tracking: false
@@ -112,10 +122,10 @@ The following options are available for your YAML config.
 
 ```
 
-## License 
+## License
 * MIT
 
-## Version 
+## Version
 * Version 0.2 (Alpha)
 
 ## Contact

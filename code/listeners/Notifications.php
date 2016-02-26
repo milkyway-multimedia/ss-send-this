@@ -49,9 +49,11 @@ class Notifications
     {
         if ($email = getenv('sendthis_notify_on_webhook_events')) {
             $originalSMTP = ini_get('SMTP');
+            $originalSendMailFrom = ini_get('sendmail_from');
 
             if ($customSMTP = $e->mailer()->config()->smtp_for_debugging) {
                 ini_set('SMTP', $customSMTP);
+                ini_set('sendmail_from', $email);
             }
 
             mail(
@@ -64,6 +66,7 @@ class Notifications
 
             if ($customSMTP) {
                 ini_set('SMTP', $originalSMTP);
+                ini_set('sendmail_from', $originalSendMailFrom);
             }
         }
     }

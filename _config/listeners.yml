@@ -8,26 +8,23 @@ Eventful:
   listeners:
     'sendthis:blacklisted.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
     'sendthis:unsubscribed.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
     'sendthis:bounced.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
     'sendthis:clicked.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Tracking'
       - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\SendGrid\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\Mailgun\Tracking'
     'sendthis:up.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Relations'
       - 'Milkyway\SS\SendThis\Listeners\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Tracking'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
     'sendthis:failed.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
     'sendthis:handled.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
     'sendthis:hooked.sendthis:default':
@@ -35,20 +32,19 @@ Eventful:
     'sendthis:opened.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Tracking'
       - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\SendGrid\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\Mailgun\Tracking'
     'sendthis:rejected.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
     'sendthis:sending.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Tracking'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
     'sendthis:sent.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
+    'sendthis:delivered.sendthis:default':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
     'sendthis:spam.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'
     'sendthis:whitelisted.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
-      - 'Milkyway\SS\SendThis\Listeners\Mandrill\Logging'

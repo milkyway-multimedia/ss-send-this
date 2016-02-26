@@ -72,7 +72,14 @@ class Logging
 
     public function sent(Event $e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
-        if ($log) {
+        if (!$log && $messageId) {
+            $params['MessageID'] = $messageId;
+            $params['success'] = true;
+            $params['Sent'] = SS_Datetime::now()->Rfc2822();
+
+            $this->updateLogsForMessageId($messageId, $params);
+        }
+        else if ($log) {
             $log->Sent = SS_Datetime::now()->Rfc2822();
 
             $params['MessageID'] = $messageId;
@@ -83,9 +90,33 @@ class Logging
 
     public function failed(Event $e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
-        if ($log) {
+        if (!$log && $messageId) {
             $params['MessageID'] = $messageId;
             $params['success'] = false;
+
+            $this->updateLogsForMessageId($messageId, $params);
+        }
+        else if ($log) {
+            $params['MessageID'] = $messageId;
+            $params['success'] = false;
+            $this->updateLog($log, $params);
+        }
+    }
+
+    public function delivered(Event $e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
+    {
+        if (!$log && $messageId) {
+            $params['MessageID'] = $messageId;
+            $params['success'] = true;
+            $params['Delivered'] = SS_Datetime::now()->Rfc2822();
+
+            $this->updateLogsForMessageId($messageId, $params);
+        }
+        else if ($log) {
+            $log->Delivered = SS_Datetime::now()->Rfc2822();
+
+            $params['MessageID'] = $messageId;
+            $params['success'] = true;
             $this->updateLog($log, $params);
         }
     }
@@ -236,7 +267,7 @@ class Logging
 
     protected function updateLog($log, $params = [], $bounce = null)
     {
-        $log->Success = isset($params['success']);
+        $log->Success = isset($params['success']) ? $params['success'] : false;
 
         if (isset($params['MessageID'])) {
             $log->MessageID = $params['MessageID'];
@@ -255,6 +286,6 @@ class Logging
 
     protected function allowed(Object $mailer)
     {
-        return $mailer->config()->logging && !$mailer->config()->api_tracking;
+        return $mailer->config()->logging || $mailer->config()->api_tracking;
     }
 }

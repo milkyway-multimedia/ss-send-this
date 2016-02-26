@@ -175,8 +175,7 @@ class Mailer extends Original
 
         $headers = (object)$headers;
 
-        $this->eventful->fire(singleton('sendthis-event')->named('sendthis:up', $this), $messageId, $to, $params,
-            $params, $log, $headers);
+        $this->eventful->fire(singleton('sendthis-event')->named('sendthis:up', $this), $messageId, $to, $params, $params, $log, $headers);
 
         $headers = (array)$headers;
 

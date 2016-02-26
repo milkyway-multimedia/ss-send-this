@@ -181,7 +181,7 @@ class Standard implements Contract
             }
         }
 
-        // Email has higher chance of being received if there is a too email sent...
+        // Email has higher chance of being received if there is a to email sent...
         if ($this->noTo && $to = Email::config()->default_to_email) {
             $this->addEmail($to, 'AddAddress', $this->message, $ignoreValid);
             $this->noTo = false;
@@ -198,11 +198,15 @@ class Standard implements Contract
             $this->message->WordWrap = $this->config->word_wrap;
         }
 
-        foreach ($headers as $k => $v) {
+        foreach ((array)$this->config->headers as $k => $v) {
             $this->message->AddCustomHeader($k, $v);
         }
 
-        foreach ((array)$this->config->headers as $k => $v) {
+        foreach ((array)$transport->param('headers') as $k => $v) {
+            $this->message->AddCustomHeader($k, $v);
+        }
+
+        foreach ($headers as $k => $v) {
             $this->message->AddCustomHeader($k, $v);
         }
 

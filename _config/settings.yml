@@ -15,6 +15,10 @@ SendThis:
       class: 'Milkyway\SS\SendThis\Transports\AmazonSES'
     mandrill:
       class: 'Milkyway\SS\SendThis\Transports\Mandrill'
+    sendgrid:
+      class: 'Milkyway\SS\SendThis\Transports\SendGrid'
+    mailgun:
+      class: 'Milkyway\SS\SendThis\Transports\Mailgun'
 
   logging: true
   api_tracking: true

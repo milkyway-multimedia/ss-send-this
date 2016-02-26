@@ -19,6 +19,8 @@ use Object;
 
 class Tracking extends DefaultTracking
 {
+    protected $transportClass = 'Milkyway\SS\SendThis\Transports\Mandrill';
+
     public function opened(Event $e, $messageId = '', $email = '', $params = [], $response = [], $log = null)
     {
         if (!$this->allowed($e->mailer()) || !$messageId) {
@@ -36,6 +38,10 @@ class Tracking extends DefaultTracking
         $date = isset($response['ts']) ? date('Y-m-d H:i:s', $response['ts']) : SS_Datetime::now()->Rfc2822();
 
         foreach ($logs as $log) {
+            if(trim($log->Transport, '\\') != $this->transportClass) {
+                continue;
+            }
+
             if (!$log->Opened) {
                 $log->Tracker = $tracked;
                 $log->Track_Client = $client;
@@ -60,11 +66,24 @@ class Tracking extends DefaultTracking
             return;
         }
 
+        $noOfLogs = 0;
+
         foreach ($logs as $log) {
+            if(trim($log->Transport, '\\') != $this->transportClass) {
+                continue;
+            }
+
+            $noOfLogs++;
+
             $link = $log->Links()->filter('Original', $response['url'])->first();
+
             if ($link) {
                 break;
             }
+        }
+
+        if(!$noOfLogs) {
+            return;
         }
 
         if (!$link) {

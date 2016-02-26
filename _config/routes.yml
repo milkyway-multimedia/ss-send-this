@@ -9,4 +9,6 @@ Director:
     'email-subscriptions//$Action/$Email': 'Milkyway\SS\SendThis\Controllers\EmailSubscriptions'
     'mailer/m': 'Milkyway\SS\SendThis\Controllers\Mandrill'
     'mailer/a': 'Milkyway\SS\SendThis\Controllers\AmazonSes'
+    'mailer/s': 'Milkyway\SS\SendThis\Controllers\SendGrid'
+    'mailer/g': 'Milkyway\SS\SendThis\Controllers\Mailgun'
     '$Slug/mail-footer.gif': 'Milkyway\SS\SendThis\Controllers\Tracker'

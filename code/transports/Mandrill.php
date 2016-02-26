@@ -129,14 +129,6 @@ class Mandrill extends Mail
             unset($headers['X-ReturnPathDomain']);
         }
 
-        if (isset($this->params['headers'])) {
-            foreach ((array)$this->params['headers'] as $header => $value) {
-                if (!isset($headers[$header])) {
-                    $headers[$header] = $value;
-                }
-            }
-        }
-
         if (!isset($headers['X-MC-Track']) && (isset($this->params['tracking']) || isset($this->params['api_tracking']))) {
             $headers['X-MC-Track'] = 'opens,clicks_htmlonly';
         }

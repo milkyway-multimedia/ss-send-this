@@ -34,6 +34,7 @@ class SendThis_Log extends DataObject
         'Subject'       => 'Text',
         'Attachments'   => 'Text',
         'Sent'          => 'Datetime',
+        'Delivered'     => 'Datetime',
         'MessageID'     => 'Text',
         'Success'       => 'Boolean',
         'Notify_Sender' => 'Varchar(255)',
@@ -89,7 +90,6 @@ class SendThis_Log extends DataObject
         'ClientCompany',
         'ClientCompanyLink',
         'CountryCode',
-
         'OperatingSystemIcon',
         'OperatingSystemBrand',
         'OperatingSystemLink',

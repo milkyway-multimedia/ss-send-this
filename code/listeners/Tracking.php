@@ -236,19 +236,37 @@ class Tracking
             }
 
             $agent = base64_encode($tracked['UserAgentString']);
-            $response = @file_get_contents("http://user-agent-string.info/rpc/rpctxt.php?key=free&ua={$agent}");
+            $response = @file_get_contents("http://www.useragentstring.com/?uas={$agent}&getJSON=all");
 
             if ($response) {
-                $response = explode('|', $response);
+                $response = json_decode($response, true);
 
-                if (isset($response[0]) && $response[0] < 4) {
-                    $tracked['Type'] = isset($response[1]) ? $response[1] : null;
-                    $tracked['ClientBrand'] = isset($response[2]) ? $response[2] : null;
-                    $tracked['Client'] = isset($response[3]) ? $response[3] : null;
-                    $tracked['Icon'] = isset($response[7]) ? $response[7] : null;
-                    $tracked['OperatingSystemBrand'] = isset($response[8]) ? $response[8] : null;
-                    $tracked['OperatingSystem'] = isset($response[9]) ? $response[9] : null;
-                    $tracked['OperatingSystemIcon'] = isset($response[13]) ? $response[13] : null;
+                if(!empty($response['agent_type'])) {
+                    $tracked['Type'] = $response['agent_type'];
+                }
+
+                if(!empty($response['agent_name'])) {
+                    $tracked['Client'] = $response['agent_name'];
+                }
+
+                if(!empty($response['agent_version'])) {
+                    $tracked['ClientVersion'] = $response['agent_version'];
+                }
+
+                if(!empty($response['os_type'])) {
+                    $tracked['OperatingSystemBrand'] = $response['os_type'];
+                }
+
+                if(!empty($response['os_name'])) {
+                    $tracked['OperatingSystem'] = $response['os_name'];
+                }
+
+                if(!empty($response['os_versionName'])) {
+                    $tracked['OperatingSystemVersion'] = $response['os_versionName'];
+
+                    if(!empty($response['os_versionNumber'])) {
+                        $tracked['OperatingSystemVersion'] .= ' ' . $response['os_versionNumber'];
+                    }
                 }
             }
         }
