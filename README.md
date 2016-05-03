@@ -7,6 +7,7 @@ It is focused on sending email via API and SMTP, and supports the following meth
 - Amazon SES (via API)
 - SendGrid (via API)
 - Mailgun (via API)
+- SparkPost (via API)
 - SMTP
 - PHP Mail
 

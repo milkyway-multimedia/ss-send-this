@@ -19,6 +19,8 @@ SendThis:
       class: 'Milkyway\SS\SendThis\Transports\SendGrid'
     mailgun:
       class: 'Milkyway\SS\SendThis\Transports\Mailgun'
+    sparkpost:
+      class: 'Milkyway\SS\SendThis\Transports\SparkPost'
 
   logging: true
   api_tracking: true
