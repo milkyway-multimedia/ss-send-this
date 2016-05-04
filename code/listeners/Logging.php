@@ -191,7 +191,7 @@ class Logging
             $params['message'] = 'The end point has rejected this email for some reason. Usually this is because the recent bounce for this recipient, the recipient has registered a spam complaint, the recipient is unsubscribed from emails from your application, or the recipient has been blacklisted.';
         }
 
-        $this->updateBadEmail($messageId, $email, $params);
+        $this->updateBadEmail($messageId, '', $params);
     }
 
     public function blacklisted(Event $e, $messageId = '', $email = '', $params = [], $response = [])

@@ -18,6 +18,7 @@ Eventful:
       - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
       - 'Milkyway\SS\SendThis\Listeners\SendGrid\Tracking'
       - 'Milkyway\SS\SendThis\Listeners\Mailgun\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\SparkPost\Tracking'
     'sendthis:up.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Relations'
       - 'Milkyway\SS\SendThis\Listeners\Logging'
@@ -34,6 +35,10 @@ Eventful:
       - 'Milkyway\SS\SendThis\Listeners\Mandrill\Tracking'
       - 'Milkyway\SS\SendThis\Listeners\SendGrid\Tracking'
       - 'Milkyway\SS\SendThis\Listeners\Mailgun\Tracking'
+      - 'Milkyway\SS\SendThis\Listeners\SparkPost\Tracking'
+    'sendthis:rejected.sendthis:default':
+      - 'Milkyway\SS\SendThis\Listeners\Logging'
+      - 'Milkyway\SS\SendThis\Listeners\Notifications'
     'sendthis:rejected.sendthis:default':
       - 'Milkyway\SS\SendThis\Listeners\Logging'
       - 'Milkyway\SS\SendThis\Listeners\Notifications'

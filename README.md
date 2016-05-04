@@ -67,6 +67,9 @@ The second parameter is a callable, so it can be an anonymous function, a callab
 The following urls will collect web hooks:
 - yourwebsite.com/mailer/m: Mandrill
 - yourwebsite.com/mailer/a: Amazon SES
+- yourwebsite.com/mailer/s: SendGrid
+- yourwebsite.com/mailer/g: Mailgun
+- yourwebsite.com/mailer/p: SparkPost
 
 ### Transports
 By default, this module will use PHP Mail (as per the normal Silverstripe mailer, but implementing PHPMailer). To use the other setups, please read on.

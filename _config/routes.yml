@@ -11,4 +11,5 @@ Director:
     'mailer/a': 'Milkyway\SS\SendThis\Controllers\AmazonSes'
     'mailer/s': 'Milkyway\SS\SendThis\Controllers\SendGrid'
     'mailer/g': 'Milkyway\SS\SendThis\Controllers\Mailgun'
+    'mailer/p': 'Milkyway\SS\SendThis\Controllers\SparkPost'
     '$Slug/mail-footer.gif': 'Milkyway\SS\SendThis\Controllers\Tracker'
