@@ -19,8 +19,9 @@
     "silverstripe/framework"               : "~3.2",
     "phpmailer/phpmailer"                  : "~5.2.14",
     "guzzlehttp/guzzle"                    : "~6",
-    "milkyway-multimedia/ss-behaviours": "~0.2",
-    "milkyway-multimedia/ss-mwm"           : "~0.3",
+    "milkyway-multimedia/ss-behaviours"    : "~0.2",
+    "milkyway-multimedia/ss-mwm-core"      : "~0.3",
+    "milkyway-multimedia/ss-mwm-env"       : "~0.3",
     "milkyway-multimedia/ss-eventful"      : "~0.2"
   },
   "extra"      : {
